@@ -3,7 +3,10 @@ CREATE TABLE usuario (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
     tipo VARCHAR(30) NOT NULL,
-    ativo BOOLEAN NOT NULL DEFAULT TRUE
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT chk_usuario_tipo
+        CHECK (tipo IN ('ALUNO', 'PROFESSOR', 'FUNCIONARIO'))
 );
 
 CREATE TABLE equipamento (
@@ -12,7 +15,13 @@ CREATE TABLE equipamento (
     nome VARCHAR(100) NOT NULL,
     categoria VARCHAR(50) NOT NULL,
     estado VARCHAR(30) NOT NULL,
-    status VARCHAR(30) NOT NULL DEFAULT 'DISPONIVEL'
+    status VARCHAR(30) NOT NULL DEFAULT 'DISPONIVEL',
+
+    CONSTRAINT chk_equipamento_estado
+        CHECK (estado IN ('NOVO', 'BOM', 'REGULAR', 'DANIFICADO')),
+
+    CONSTRAINT chk_equipamento_status
+        CHECK (status IN ('DISPONIVEL', 'EMPRESTADO', 'INDISPONIVEL'))
 );
 
 CREATE TABLE emprestimo (
@@ -23,6 +32,9 @@ CREATE TABLE emprestimo (
     data_prevista DATETIME NOT NULL,
     data_devolucao DATETIME NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'ABERTO',
+
+    CONSTRAINT chk_emprestimo_status
+        CHECK (status IN ('ABERTO', 'DEVOLVIDO')),
 
     CONSTRAINT fk_emprestimo_usuario
         FOREIGN KEY (usuario_id)
