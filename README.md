@@ -34,6 +34,41 @@ Os objetos de `Model` representam as entidades do domínio e são utilizados pel
 - Equipamento
 - Emprestimo
 
+## Valores do domínio
+
+```text
+Usuario.tipo
+- ALUNO
+- PROFESSOR
+- FUNCIONARIO
+
+Equipamento.estado
+- NOVO
+- BOM
+- REGULAR
+- DANIFICADO
+
+Equipamento.status
+- DISPONIVEL
+- EMPRESTADO
+- INDISPONIVEL
+
+Emprestimo.status
+- ABERTO
+- DEVOLVIDO
+```
+
+`ATRASADO` não é armazenado como status. Um empréstimo é considerado atrasado quando permanece `ABERTO` e a data atual ultrapassa `data_prevista`.
+
+## Regras de negócio iniciais
+
+1. O usuário precisa estar ativo para realizar um empréstimo.
+2. O equipamento precisa estar com status `DISPONIVEL`.
+3. Um equipamento não pode possuir dois empréstimos abertos ao mesmo tempo.
+4. Ao realizar um empréstimo, o equipamento passa para `EMPRESTADO` e o empréstimo fica `ABERTO`.
+5. Ao devolver, o empréstimo passa para `DEVOLVIDO`, `data_devolucao` é preenchida e o equipamento volta para `DISPONIVEL`.
+6. Usuários e equipamentos com histórico de empréstimos não devem ser excluídos fisicamente; as chaves estrangeiras usam `ON DELETE RESTRICT`.
+
 ## Equipe
 
 - Lucas — Model, DAO, JDBC, MySQL e integração
