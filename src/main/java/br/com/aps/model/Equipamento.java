@@ -2,6 +2,15 @@ package br.com.aps.model;
 
 public class Equipamento {
 
+    public static final String ESTADO_NOVO = "NOVO";
+    public static final String ESTADO_BOM = "BOM";
+    public static final String ESTADO_REGULAR = "REGULAR";
+    public static final String ESTADO_DANIFICADO = "DANIFICADO";
+
+    public static final String STATUS_DISPONIVEL = "DISPONIVEL";
+    public static final String STATUS_EMPRESTADO = "EMPRESTADO";
+    public static final String STATUS_INDISPONIVEL = "INDISPONIVEL";
+
     private int id;
     private String patrimonio;
     private String nome;
@@ -23,8 +32,8 @@ public class Equipamento {
     }
 
     public Equipamento(String patrimonio, String nome, String categoria,
-                       String estado, String status) {
-        this(0, patrimonio, nome, categoria, estado, status);
+                       String estado) {
+        this(0, patrimonio, nome, categoria, estado, STATUS_DISPONIVEL);
     }
 
     public int getId() {
