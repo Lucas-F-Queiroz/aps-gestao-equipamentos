@@ -41,11 +41,33 @@ Os objetos de `Model` representam as entidades do domínio e são utilizados pel
 - Davi — Controller, regras e validações
 - Aline — documentação, DER, UML e apoio à apresentação
 
+## Como rodar o projeto pela primeira vez
+
+1. Instale Java 17, Maven e MySQL.
+2. Use o DBeaver ou outro cliente MySQL para conectar ao servidor local.
+3. Execute o arquivo:
+
+```text
+database/create_database.sql
+```
+
+4. Configure as credenciais do banco localmente, se necessário:
+
+```text
+APS_DB_URL
+APS_DB_USER
+APS_DB_PASSWORD
+```
+
+5. Execute a aplicação Java.
+6. Na inicialização, o Flyway aplicará automaticamente as migrations pendentes.
+7. Depois disso, o sistema acessará o banco normalmente por JDBC e DAO.
+
 ## Banco de dados
 
 O projeto usa MySQL. O banco precisa existir antes da primeira execução do Flyway.
 
-Para criar o banco uma única vez, execute:
+O script de bootstrap está em:
 
 ```text
 database/create_database.sql
