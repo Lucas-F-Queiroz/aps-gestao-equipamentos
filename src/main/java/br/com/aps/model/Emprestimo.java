@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 public class Emprestimo {
 
+    public static final String STATUS_ABERTO = "ABERTO";
+    public static final String STATUS_DEVOLVIDO = "DEVOLVIDO";
+
     private int id;
     private int usuarioId;
     private int equipamentoId;
@@ -28,9 +31,14 @@ public class Emprestimo {
     }
 
     public Emprestimo(int usuarioId, int equipamentoId,
-                      LocalDateTime dataRetirada, LocalDateTime dataPrevista,
-                      String status) {
-        this(0, usuarioId, equipamentoId, dataRetirada, dataPrevista, null, status);
+                      LocalDateTime dataRetirada, LocalDateTime dataPrevista) {
+        this(0, usuarioId, equipamentoId, dataRetirada, dataPrevista, null, STATUS_ABERTO);
+    }
+
+    public boolean isAtrasado() {
+        return STATUS_ABERTO.equals(status)
+                && dataPrevista != null
+                && LocalDateTime.now().isAfter(dataPrevista);
     }
 
     public int getId() {
