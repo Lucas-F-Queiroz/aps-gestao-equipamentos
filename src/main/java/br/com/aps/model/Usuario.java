@@ -2,6 +2,10 @@ package br.com.aps.model;
 
 public class Usuario {
 
+    public static final String TIPO_ALUNO = "ALUNO";
+    public static final String TIPO_PROFESSOR = "PROFESSOR";
+    public static final String TIPO_FUNCIONARIO = "FUNCIONARIO";
+
     private int id;
     private String nome;
     private String email;
@@ -19,8 +23,8 @@ public class Usuario {
         this.ativo = ativo;
     }
 
-    public Usuario(String nome, String email, String tipo, boolean ativo) {
-        this(0, nome, email, tipo, ativo);
+    public Usuario(String nome, String email, String tipo) {
+        this(0, nome, email, tipo, true);
     }
 
     public int getId() {
