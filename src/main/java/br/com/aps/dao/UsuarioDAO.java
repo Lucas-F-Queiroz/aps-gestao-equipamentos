@@ -59,6 +59,90 @@ public class UsuarioDAO {
         return usuarios;
     }
 
+    // Retorna null se nao existir usuario com o ID informado.
+    public Usuario buscarPorId(int id) throws SQLException {
+        String sql = """
+                SELECT id, nome, email, tipo, ativo
+                FROM usuario
+                WHERE id = ?
+                """;
+
+        try (Connection connection = ConnectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapearUsuario(resultSet);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Busca parcial: "ana" encontra "Ana Maria", conforme a collation do banco.
+    public List<Usuario> buscarPorNome(String nome) throws SQLException {
+        String sql = """
+                SELECT id, nome, email, tipo, ativo
+                FROM usuario
+                WHERE nome LIKE ?
+                ORDER BY nome ASC, id ASC
+                """;
+
+        List<Usuario> usuarios = new ArrayList<>();
+
+        try (Connection connection = ConnectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, "%" + nome.trim() + "%");
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    usuarios.add(mapearUsuario(resultSet));
+                }
+            }
+        }
+
+        return usuarios;
+    }
+
+    // Retorna false se o ID nao existir no banco.
+    public boolean atualizar(Usuario usuario) throws SQLException {
+        String sql = """
+                UPDATE usuario
+                SET nome = ?, email = ?, tipo = ?, ativo = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection = ConnectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, usuario.getNome());
+            statement.setString(2, usuario.getEmail());
+            statement.setString(3, usuario.getTipo());
+            statement.setBoolean(4, usuario.isAtivo());
+            statement.setInt(5, usuario.getId());
+
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    // ON DELETE RESTRICT impede excluir usuarios com historico de emprestimos.
+    // Nesses casos, a SQLException deve ser tratada pelo Controller.
+    public boolean excluir(int id) throws SQLException {
+        String sql = "DELETE FROM usuario WHERE id = ?";
+
+        try (Connection connection = ConnectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            return statement.executeUpdate() > 0;
+        }
+    }
+
     private Usuario mapearUsuario(ResultSet resultSet) throws SQLException {
         return new Usuario(
                 resultSet.getInt("id"),
