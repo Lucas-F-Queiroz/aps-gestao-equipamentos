@@ -168,3 +168,33 @@ antes de abrir a interface gráfica.
 ## Fluxo de desenvolvimento
 
 Cada tarefa deve ser feita em uma branch própria e enviada por Pull Request antes do merge na `main`.
+
+
+## UsuarioDAO
+
+Arquivo: `src/main/java/br/com/aps/dao/UsuarioDAO.java`.
+
+| Método | Retorno | Comportamento |
+| --- | --- | --- |
+| `inserir(Usuario)` | `void` | Insere e preenche `usuario.id` com o ID gerado |
+| `listar()` | `List<Usuario>` | Lista em ordem de nome, depois ID |
+| `buscarPorId(int)` | `Usuario` | Retorna o registro ou `null` se não existir |
+| `buscarPorNome(String)` | `List<Usuario>` | Pesquisa parcial pelo nome |
+| `atualizar(Usuario)` | `boolean` | `false` se não encontrou o ID |
+| `excluir(int)` | `boolean` | `false` se não encontrou o ID |
+
+Todos os métodos podem lançar `SQLException`. A exclusão física de usuário
+com histórico de empréstimos deve ser bloqueada pelas chaves estrangeiras do MySQL.
+O Controller deverá traduzir esse erro para uma mensagem compreensível.
+
+### Teste manual com MySQL
+
+Depois de criar o banco e configurar a conexão, execute o método `main` da classe:
+
+```text
+src/test/java/br/com/aps/dao/UsuarioDAOManualTest.java
+```
+
+Ela aplica migrations, insere um usuário temporário, valida pesquisas e listagem,
+atualiza, exclui e confere o resultado. Exige MySQL local disponível e não é
+executada automaticamente pelo build Maven.
