@@ -1,11 +1,15 @@
--- A coluna gerada contem o equipamento apenas para emprestimos ABERTOS.
--- O indice UNIQUE permite multiplos NULL (historico DEVOLVIDO), mas
--- impede dois emprestimos ABERTOS para o mesmo equipamento.
+-- A coluna virtual so guarda o ID do equipamento quando ha emprestimo ABERTO.
+-- UNIQUE permite multiplos NULL para registros DEVOLVIDOS (historico),
+-- mas apenas um emprestimo ABERTO por equipamento.
+--
+-- VIRTUAL e usado porque a V1 possui FK com ON UPDATE CASCADE.
+-- Uma coluna gerada STORED sobre equipamento_id conflita com essa regra
+-- referencial no MySQL 8.4; VIRTUAL evita modificar a FK historica.
 ALTER TABLE emprestimo
     ADD COLUMN equipamento_aberto_id INT
         GENERATED ALWAYS AS (
             CASE WHEN status = 'ABERTO' THEN equipamento_id ELSE NULL END
-        ) STORED,
+        ) VIRTUAL,
     ADD CONSTRAINT uq_emprestimo_equipamento_aberto
         UNIQUE (equipamento_aberto_id),
     ADD CONSTRAINT chk_emprestimo_datas
