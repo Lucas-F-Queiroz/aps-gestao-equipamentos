@@ -1,0 +1,53 @@
+name: Testar EmprestimoDAO com MySQL
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  integracao-mysql:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: aps_equipamentos
+          MYSQL_USER: aps
+          MYSQL_PASSWORD: teste-local
+          MYSQL_ROOT_PASSWORD: senha-root-temporaria
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uaps -pteste-local"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Compilar e copiar dependencias
+        run: mvn -B -ntp -DskipTests package dependency:copy-dependencies -DoutputDirectory=target/dependency
+
+      - name: Testar operacoes e rollback do EmprestimoDAO
+        env:
+          APS_DB_URL: "jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo"
+          APS_DB_USER: aps
+          APS_DB_PASSWORD: teste-local
+        run: |
+          java -cp "target/classes:target/test-classes:target/dependency/*" \
+            br.com.aps.dao.EmprestimoDAOManualCheck
