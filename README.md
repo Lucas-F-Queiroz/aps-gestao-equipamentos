@@ -86,17 +86,18 @@ Emprestimo.status
 database/create_database.sql
 ```
 
-4. Configure as credenciais do banco localmente, se necessário:
+4. Copie o modelo e configure as credenciais do seu MySQL local:
 
 ```text
-APS_DB_URL
-APS_DB_USER
-APS_DB_PASSWORD
+src/main/resources/application.properties.example
+    -> src/main/resources/application.properties
 ```
 
-5. Execute a aplicação Java.
-6. Na inicialização, o Flyway aplicará automaticamente as migrations pendentes.
-7. Depois disso, o sistema acessará o banco normalmente por JDBC e DAO.
+5. No Eclipse, importe o projeto por **File > Import > Maven > Existing Maven Projects**.
+6. Atualize o projeto com **F5** e execute um dos testes manuais listados abaixo por **Run As > Java Application**.
+7. O teste aplicará as migrations pendentes pelo Flyway antes de acessar os DAOs.
+
+A versão atual ainda não possui interface gráfica nem classe principal da aplicação.
 
 ## Banco de dados
 
@@ -131,23 +132,44 @@ V3__cria_indice_exemplo.sql
 
 Credenciais não devem ser versionadas no Git.
 
-A conexão JDBC e o Flyway leem estas variáveis de ambiente quando existirem:
+A conexão JDBC e o Flyway leem o mesmo arquivo `src/main/resources/application.properties`,
+carregado pelo classpath. Esse arquivo é ignorado pelo Git; apenas o modelo
+`application.properties.example` deve ser versionado.
 
 ```text
-APS_DB_URL
-APS_DB_USER
-APS_DB_PASSWORD
+db.url=jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+db.user=aps_local
+db.password=SUA_SENHA_LOCAL
 ```
 
-Valores padrão usados no desenvolvimento local:
+Preencha o usuário e a senha da sua instalação local. As três propriedades são
+obrigatórias; `db.password=` é permitido se o banco usar senha vazia.
+As variáveis `APS_DB_*` não são utilizadas.
+
+No Eclipse, atualize o projeto com **F5** após criar ou editar o arquivo.
+Não compartilhe o `application.properties` nem JARs que contenham suas credenciais.
+
+## Testes locais
+
+Para conferir a compilação, execute na raiz do projeto:
 
 ```text
-URL: jdbc:mysql://localhost:3306/aps_equipamentos
-Usuário: root
-Senha: vazia
+mvn verify
 ```
 
-Se o seu MySQL usar outra senha, configure `APS_DB_PASSWORD` localmente em vez de colocar a senha no repositório.
+Os testes atuais são programas Java manuais; esse comando não executa as verificações
+de configuração nem acessa o MySQL. No Eclipse, execute o método `main` destas classes:
+
+| Classe em `src/test/java` | Requisito | Resultado esperado |
+| --- | --- | --- |
+| `br.com.aps.util.DatabaseConfigManualCheck` | Java 17, sem banco | Configuração validada |
+| `br.com.aps.dao.UsuarioDAOManualTest` | MySQL e `application.properties` | Todas as verificações passaram |
+| `br.com.aps.dao.EquipamentoDAOManualCheck` | MySQL e `application.properties` | Verificações concluídas com sucesso |
+| `br.com.aps.dao.EmprestimoDAOManualCheck` | MySQL e `application.properties` | Verificações concluídas com sucesso |
+
+Os testes DAO criam e removem seus registros temporários. Execute-os em um banco de
+desenvolvimento. No GitHub Actions, uma instância MySQL isolada e um arquivo de
+configuração temporário permitem executar os três DAOs sem utilizar credenciais pessoais.
 
 ## Flyway
 

@@ -2,6 +2,7 @@
 target/
 
 # IDEs
+bin/
 .idea/
 *.iml
 .classpath
@@ -14,6 +15,7 @@ target/
 Thumbs.db
 
 # Credenciais/configurações locais
+src/main/resources/application.properties
 src/main/resources/database.properties
 .env
 

@@ -11,7 +11,7 @@ import java.util.UUID;
  * Checagem manual de integracao.
  *
  * Antes de executar, crie o banco com database/create_database.sql e
- * configure APS_DB_URL, APS_DB_USER e APS_DB_PASSWORD se necessario.
+ * configure src/main/resources/application.properties.
  *
  * Rode o metodo main pela IDE. Esta classe nao e um teste JUnit e nao
  * depende de um banco no build normal do Maven.
