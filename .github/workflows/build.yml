@@ -26,3 +26,6 @@ jobs:
 
       - name: Compilar projeto (sem executar teste de banco)
         run: mvn -B -ntp -DskipTests package
+
+      - name: Validar campos da configuracao (sem banco)
+        run: java -cp "target/classes:target/test-classes" br.com.aps.util.DatabaseConfigManualCheck

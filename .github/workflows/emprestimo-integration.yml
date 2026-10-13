@@ -1,4 +1,4 @@
-name: Testar EmprestimoDAO com MySQL
+name: Testar DAOs com MySQL
 
 on:
   pull_request:
@@ -40,14 +40,19 @@ jobs:
           java-version: '17'
           cache: maven
 
+      - name: Configurar conexao temporaria do CI
+        run: |
+          cat > src/main/resources/application.properties <<'EOF'
+          db.url=jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+          db.user=aps
+          db.password=teste-local
+          EOF
+
       - name: Compilar e copiar dependencias
         run: mvn -B -ntp -DskipTests package dependency:copy-dependencies -DoutputDirectory=target/dependency
 
-      - name: Testar operacoes e rollback do EmprestimoDAO
-        env:
-          APS_DB_URL: "jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo"
-          APS_DB_USER: aps
-          APS_DB_PASSWORD: teste-local
+      - name: Testar operacoes dos tres DAOs
         run: |
-          java -cp "target/classes:target/test-classes:target/dependency/*" \
-            br.com.aps.dao.EmprestimoDAOManualCheck
+          for teste in UsuarioDAOManualTest EquipamentoDAOManualCheck EmprestimoDAOManualCheck; do
+            java -cp "target/classes:target/test-classes:target/dependency/*" "br.com.aps.dao.$teste"
+          done

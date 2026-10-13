@@ -1,0 +1,4 @@
+# Copie para application.properties e preencha as credenciais do seu MySQL local.
+db.url=jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+db.user=aps_local
+db.password=

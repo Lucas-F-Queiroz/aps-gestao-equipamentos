@@ -11,7 +11,7 @@ import java.util.UUID;
  * Teste de integracao manual com MySQL local.
  *
  * Preparacao: criar o banco com database/create_database.sql
- * e configurar APS_DB_URL, APS_DB_USER e APS_DB_PASSWORD quando necessario.
+ * e configurar src/main/resources/application.properties.
  *
  * Execute esta classe pela IDE usando o metodo main.
  * O registro temporario criado pelo teste e removido ao final.
