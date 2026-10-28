@@ -93,8 +93,8 @@ public class TelaInicio extends JPanel {
         grade.add(criarBotao(janela, 1, "Equipamentos", "Situação e disponibilidade", Icone.COMPUTADOR, Estilo.AZUL));
         grade.add(criarBotao(janela, 2, "Cadastros", "Pessoas e equipamentos", Icone.MAIS, Estilo.VERDE));
         grade.add(criarBotao(janela, 3, "Consultar", "Emprestados e pessoas", Icone.LUPA, new Color(124, 58, 237)));
-        grade.add(criarBotao(janela, 4, "Devolução", "Registrar e avaliar o estado", Icone.DEVOLVER, Estilo.LARANJA));
-        grade.add(criarBotao(janela, 5, "Relatórios", "Estado na devolução", Icone.RELATORIO, new Color(13, 148, 136)));
+        grade.add(criarBotao(janela, 4, "Devolução", "Registrar devolução", Icone.DEVOLVER, Estilo.LARANJA));
+        grade.add(criarBotao(janela, 5, "Relatórios", "Histórico de empréstimos", Icone.RELATORIO, new Color(13, 148, 136)));
         grade.add(criarBotao(janela, 6, "Empréstimos", "Emprestar equipamentos", Icone.PRANCHETA, new Color(219, 39, 119)));
         return grade;
     }
