@@ -70,7 +70,8 @@ public class TelaInicio extends JPanel {
         caixa.putClientProperty("FlatLaf.style", "arc: 24"); // cantos arredondados
 
         // A imagem fica em src/main/resources/imagens/mao.png
-        JLabel mao = new JLabel(new ImageIcon(TelaInicio.class.getResource("/imagens/mao.png")));
+        java.net.URL recurso = TelaInicio.class.getResource("/imagens/mao.png");
+        JLabel mao = new JLabel(recurso == null ? null : new ImageIcon(recurso));
 
         JLabel mensagem = new JLabel("<html>"
             + "<span style='font-size:25px'><b>Olá, seja bem-vindo!</b></span><br>"
