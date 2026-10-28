@@ -1,6 +1,7 @@
-# OPCIONAL: os valores padrao ja funcionam com docker compose local.
-# Configure somente se preferir um MySQL existente.
-# Nunca versione suas credenciais reais em application.properties.
-db.url=jdbc:mysql://127.0.0.1:3307/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
-db.user=aps
-db.password=aps_local
+# Copie este arquivo para application.properties (mesma pasta).
+# Configure a porta, o usuario e a senha da SUA instalacao local do MySQL.
+# O banco 'aps_equipamentos' deve existir (veja database/create_database.sql).
+# Nao envie application.properties com senhas para o GitHub.
+db.url=jdbc:mysql://localhost:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+db.user=root
+db.password=

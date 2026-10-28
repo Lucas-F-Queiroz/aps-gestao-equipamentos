@@ -53,19 +53,18 @@ A alteração manual de disponibilidade é um UPDATE condicional.
 
 O CI executa compilação Java 17, MySQL 8.4, verificações DAO,
 `APSFluxoCheck`, `APSOrdenacaoCheck`, smoke test da interface e
-execução Docker Compose sem arquivo de propriedades.
+execução com configuração JDBC temporária em MySQL isolado no GitHub Actions.
 
 ## Pontos que exigem confirmação humana
 
-1. **Relação em POO:** a relação no banco está explícita, e a classe
-   `Emprestimo` representa a associação por IDs de `Usuario` e `Equipamento`.
-   Se o docente exigir uma associação por *referências diretas a objetos Java*,
-   essa exigência deve ser esclarecida antes de alterar os Models.
-2. **Trabalho escrito:** confirmar onde estão DER, UML, protótipos/prints,
-   metodologia, análise crítica, relatório ABNT, referências, fichas e slides.
-3. **Teste manual:** verificar a navegação e os diálogos em um Windows com
-   dimensões de tela reais; o smoke test automatizado não avalia aparência
-   nem facilidade de uso.
+**Relacionamentos confirmados pelo professor:** são exigidos relacionamentos
+no banco de dados; não há exigência de referências diretas a objetos Java.
+As chaves estrangeiras de `emprestimo` atendem a esse requisito.
+
+1. **Trabalho escrito:** conferir DER, UML, protótipos/prints, metodologia,
+   análise crítica, relatório ABNT, referências, fichas e slides.
+2. **Teste manual:** verificar navegação, diálogos e exportação CSV no Windows;
+   o smoke test automatizado não avalia aparência nem facilidade de uso.
 
 **Estado do projeto:** requisitos verificáveis de implementação atendidos;
 **entrega acadêmica integral não certificada** enquanto os itens externos

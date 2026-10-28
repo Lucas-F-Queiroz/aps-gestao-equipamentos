@@ -9,7 +9,7 @@ import br.com.aps.view.JanelaPrincipal;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-/** Ponto de entrada: prepara o banco ANTES de abrir a interface Swing. */
+/** Inicializa as tabelas com Flyway e abre a interface Swing. */
 public final class Aplicacao {
     private static final UsuarioController USUARIOS = new UsuarioController();
     private static final EquipamentoController EQUIPAMENTOS = new EquipamentoController();
@@ -26,8 +26,8 @@ public final class Aplicacao {
         } catch (RuntimeException erro) {
             erro.printStackTrace();
             SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
-                "Não foi possível conectar ao MySQL ou preparar o banco.\n"
-                + "Use iniciar.bat / iniciar.sh ou confira a configuração JDBC.\n\n"
+                "Nao foi possivel conectar ao MySQL ou preparar o banco.\n"
+                + "Confira se o MySQL esta iniciado e se application.properties esta configurado.\n\n"
                 + erro.getMessage(), "Erro ao iniciar", JOptionPane.ERROR_MESSAGE));
             return;
         }

@@ -1,17 +1,18 @@
 # EmprestimoDAO
 
-O banco novo tem somente `V1__estrutura_inicial.sql`, que define as tabelas
-`usuario`, `equipamento` e `emprestimo`, chaves estrangeiras e integridade.
+O banco novo tem somente `V1__estrutura_inicial.sql`, com
+as tabelas `usuario`, `equipamento` e `emprestimo`, chaves estrangeiras e restricoes.
 
-`EmprestimoDAO.inserir()` verifica usuario ativo, muda equipamento disponivel
-para emprestado, confere ausencia de emprestimo aberto e registra o emprestimo
-em uma **transacao JDBC**. Se uma etapa falha, executa rollback.
+`inserir()` verifica se o usuario esta ativo, marca o equipamento como
+emprestado e registra o emprestimo na **mesma transacao JDBC**.
+Se ocorrer erro, utiliza `rollback()` para desfazer alteracoes parciais.
 
-`registrarDevolucao()` atualiza status e data do emprestimo e devolve a
-disponibilidade do equipamento na mesma transacao.
+`registrarDevolucao()` registra a data de devolucao, muda o emprestimo para
+`DEVOLVIDO` e devolve a disponibilidade do equipamento na mesma transacao.
 
-`listarDetalhado()` utiliza INNER JOIN para retornar um DTO de leitura
-`EmprestimoDetalhe`, sem criar tabela adicional. `ATRASADO` e calculado,
-nao armazenado.
+`listarDetalhado()` usa `INNER JOIN` e retorna objetos
+`EmprestimoDetalhe` para exibicao, sem criar tabela adicional no banco.
+`ATRASADO` e calculado a partir da data prevista, nao armazenado.
 
-Para executar: `iniciar.bat` ou `sh iniciar.sh`; veja README.
+Para executar o programa, abra `br.com.aps.Aplicacao` pelo Eclipse,
+depois de configurar o MySQL conforme o README.

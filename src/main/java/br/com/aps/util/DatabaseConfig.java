@@ -6,35 +6,40 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-/** Configuracao independente da maquina: ambiente > arquivo opcional > MySQL do Docker local. */
+/**
+ * Le os dados de conexao do application.properties local.
+ * O arquivo real nao e versionado: cada aluno informa as credenciais do seu MySQL.
+ */
 record DatabaseConfig(String url, String user, String password) {
+
     DatabaseConfig {
-        if (url == null || url.isBlank() || user == null || user.isBlank() || password == null) {
-            throw new IllegalStateException("Configuracao JDBC incompleta.");
+        if (url == null || url.isBlank()) {
+            throw new IllegalStateException("Configure db.url em application.properties.");
+        }
+        if (user == null || user.isBlank()) {
+            throw new IllegalStateException("Configure db.user em application.properties.");
+        }
+        if (password == null) {
+            throw new IllegalStateException("Configure db.password em application.properties (pode ser vazio).");
         }
     }
 
     static DatabaseConfig load() {
-        Properties properties = new Properties();
         try (InputStream input = DatabaseConfig.class.getResourceAsStream("/application.properties")) {
-            if (input != null) {
-                properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+            if (input == null) {
+                throw new IllegalStateException(
+                    "Crie src/main/resources/application.properties a partir de application.properties.example.");
             }
-        } catch (IOException erro) {
-            throw new IllegalStateException("Falha ao ler application.properties.", erro);
-        }
-        return new DatabaseConfig(
-            configurar("APS_DB_URL", properties.getProperty("db.url"),
-                "jdbc:mysql://127.0.0.1:3307/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo"),
-            configurar("APS_DB_USER", properties.getProperty("db.user"), "aps"),
-            configurar("APS_DB_PASSWORD", properties.getProperty("db.password"), "aps_local")
-        );
-    }
 
-    private static String configurar(String nome, String propriedade, String padrao) {
-        String ambiente = System.getenv(nome);
-        if (ambiente != null) return ambiente;
-        if (propriedade != null) return propriedade;
-        return padrao;
+            Properties propriedades = new Properties();
+            propriedades.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+            return new DatabaseConfig(
+                propriedades.getProperty("db.url"),
+                propriedades.getProperty("db.user"),
+                propriedades.getProperty("db.password")
+            );
+        } catch (IOException erro) {
+            throw new IllegalStateException("Nao foi possivel ler application.properties.", erro);
+        }
     }
 }

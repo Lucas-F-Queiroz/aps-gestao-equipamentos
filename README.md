@@ -1,77 +1,67 @@
 # APS — Gestão de Empréstimos de Equipamentos de TI
 
-Sistema desktop em Java 17, Swing + FlatLaf, JDBC e MySQL 8.4, com arquitetura **MVC + DAO**.
+Projeto acadêmico em **Java 17**, **Swing/FlatLaf**, **JDBC** e **MySQL**, com arquitetura **MVC + DAO**.
 
-## Executar após baixar do GitHub
+## Como executar pelo Eclipse
 
-**Requisitos no computador:** Java 17, Maven e Docker Desktop/Engine em funcionamento. Não é necessário criar tabelas, fornecer senhas pessoais ou configurar caminhos absolutos.
+**Você precisa apenas de:** JDK 17, Eclipse com suporte Maven e MySQL instalado e funcionando. O Eclipse importa as dependências pelo `pom.xml`; não é necessário instalar ferramentas de infraestrutura adicionais.
 
-- Windows: execute `iniciar.bat` na pasta do repositório.
-- Linux/macOS: no terminal da pasta, execute `sh iniciar.sh`.
+1. No GitHub, selecione a branch `refactor/aps-mvc-enxuta` antes de clonar ou baixar o ZIP. **A `main` ainda é a versão antiga, sem interface.**
+2. Inicie o serviço do MySQL no computador. Com DBeaver, MySQL Workbench ou outro cliente, execute **uma vez** o arquivo `database/create_database.sql` para criar o banco `aps_equipamentos`.
+3. Em `src/main/resources/`, faça uma cópia de `application.properties.example` e nomeie a cópia como **`application.properties`**. Ajuste `db.user`, `db.password` e a porta de `db.url` conforme a sua instalação do MySQL (a porta padrão é **3306**). **Não envie esse arquivo com senhas para o GitHub.**
+4. No Eclipse: **File → Import → Maven → Existing Maven Projects**. Selecione a pasta do projeto, onde está `pom.xml`. Se necessário, use **Maven → Update Project**.
+5. Em `src/main/java`, abra **`br.com.aps.Aplicacao.java`** e execute **Run As → Java Application**.
 
-Os scripts iniciam o MySQL local em container, aguardam o banco ficar pronto e executam a aplicação via Maven. O Flyway cria automaticamente as tabelas na primeira inicialização.
+Na primeira execução, o **Flyway** cria as tabelas automaticamente. Você só precisa criar o **banco vazio** no passo 2; não execute a migration manualmente. Nas próximas execuções, o banco e seus dados são preservados.
 
-O banco de desenvolvimento usa **127.0.0.1:3307** para evitar conflito com um MySQL instalado na porta padrão. As credenciais do `compose.yaml` servem **apenas para ambiente local**, nunca para um servidor público. Os dados persistem em um volume Docker.
+### Se você já tem um banco de uma versão anterior
 
-Para usar um MySQL próprio sem Docker, crie `src/main/resources/application.properties` com base no arquivo `.example`, crie o banco usando `database/create_database.sql` e rode `mvn compile exec:java`. Alternativamente, configure `APS_DB_URL`, `APS_DB_USER` e `APS_DB_PASSWORD` como variáveis de ambiente. Prioridade de configuração: **ambiente → arquivo opcional → padrão do Docker**.
+A branch possui uma **única migration** `V1__estrutura_inicial.sql` com o esquema final. Ela **não é compatível** com um banco que já tenha recebido o V1/V2 antigo pelo Flyway. Use um **banco vazio separado**, alterando o nome em `db.url`, ou recrie apenas seu banco de testes, caso não tenha dados importantes. **Não apague bancos compartilhados nem bancos com dados que queira preservar.**
 
-> **Banco novo:** esta branch consolida o esquema em somente `V1__estrutura_inicial.sql`. Não se aplica sobre um banco antigo com Flyway V1/V2: recrie **um banco de desenvolvimento descartável**. Para apagar apenas o banco local deste projeto: `docker compose down -v` (comando destrutivo).
+### Erros frequentes
+
+- **Não existe `Aplicacao.java`**: você abriu a `main`, e não `refactor/aps-mvc-enxuta`.
+- **Arquivo `application.properties` não encontrado**: copie o `.example` na mesma pasta e atualize o projeto no Eclipse.
+- **Erro de conexão ou acesso negado**: verifique o serviço MySQL, porta `3306` e credenciais informadas.
+- **Problemas de Java**: configure o projeto para **JDK 17** e atualize as dependências Maven.
+- **Erro de validation/checksum do Flyway**: você está usando um banco já migrado com outra versão do esquema; use um banco vazio, sem executar `repair` para esconder a divergência.
 
 ## Arquitetura
 
 ```text
-Swing View -> Controller (validacao) -> DAO (JDBC) -> MySQL
-                   |                       |
-                   +---- Model ------------+
+View (Swing) → Controller → DAO (JDBC/SQL) → MySQL
+                   ↑            ↑
+                   └── Model ───┘
 ```
 
-O `Aplicacao.main` prepara o banco via `DatabaseMigrator` antes de iniciar o Swing. A View não executa SQL. Os Controllers coordenam operações e apresentam mensagens de erro; os DAOs possuem o SQL e as transações. O `ConnectionFactory` abre conexões configuradas por `DatabaseConfig`.
+- **Model**: as classes `Usuario`, `Equipamento` e `Emprestimo`.
+- **View**: campos, tabelas, botões e mensagens, sem comandos SQL.
+- **Controller**: validações e coordenação das operações.
+- **DAO**: consultas SQL por JDBC, inserção, atualização, exclusão e transações.
+- **MySQL**: tabelas e integridade dos dados. `Aplicacao.java` executa o Flyway antes de abrir a interface.
 
-## Modelo de dados definitivo
+## Banco e regras principais
 
-- `usuario`: id, nome, email único, tipo (`ALUNO`, `PROFESSOR`, `FUNCIONARIO`), ativo.
-- `equipamento`: id, patrimônio único, nome, categoria, estado de conservação, status.
-- `emprestimo`: id, usuário, equipamento, retirada, prazo, devolução, status.
-- `flyway_schema_history`: tabela técnica criada pelo Flyway, não entidade do sistema.
+O banco possui **três tabelas**: `usuario`, `equipamento` e a tabela de relação `emprestimo`. Os vínculos são mantidos pelas chaves estrangeiras `emprestimo.usuario_id` e `emprestimo.equipamento_id`, conforme a orientação do professor.
 
-Um usuário pode ter vários empréstimos, um equipamento pode ter vários empréstimos históricos, mas **apenas um empréstimo ABERTO por vez**. A coluna virtual `equipamento_aberto_id` e a restrição `UNIQUE` fazem essa garantia no MySQL.
+- Uma pessoa precisa estar **ativa** para realizar um empréstimo.
+- Um equipamento precisa estar **DISPONIVEL**; só pode ter **um empréstimo ABERTO** por vez.
+- Empréstimo e devolução atualizam o equipamento **na mesma transação**.
+- `ATRASADO` é calculado pela data; não é um status salvo no banco.
+- O MySQL impede excluir usuários ou equipamentos com empréstimos históricos (`ON DELETE RESTRICT`).
+- A interface permite cadastrar, consultar, filtrar, ordenar, alterar e excluir registros, respeitando essas regras.
 
-`ATRASADO` é calculado a partir do prazo, não salvo como status. Os status persistidos do empréstimo são `ABERTO` e `DEVOLVIDO`.
+## Testes e requisitos da APS
 
-### Regras
+A [matriz de conformidade](docs/CONFORMIDADE_APS_2026_2.md) relaciona os requisitos da UNIP às funcionalidades do sistema e indica o que ainda precisa ser conferido no relatório acadêmico.
 
-1. Um usuário deve existir e estar ativo para tomar emprestado.
-2. O equipamento deve estar `DISPONIVEL` e não ter empréstimo aberto.
-3. O empréstimo grava `ABERTO` e altera o equipamento para `EMPRESTADO` **na mesma transação**.
-4. A devolução grava `DEVOLVIDO`, data de devolução e equipamento `DISPONIVEL` **na mesma transação**.
-5. `ON DELETE RESTRICT` preserva histórico de empréstimos.
-6. Editar nome, patrimônio, categoria ou estado do equipamento **não altera seu status**; a mudança manual de disponibilidade é protegida por um UPDATE condicional.
-
-## Interface reaproveitada e simplificada
-
-A navegação e os componentes visuais foram reaproveitados da branch `feature/aps-v6-final`. Mantivemos cadastro de pessoas e equipamentos, inventário, consulta, empréstimo, devolução e relatório CSV, adaptados ao modelo original.
-
-**Fora de escopo:** matrícula, área/profissão livre, marca, modelo, série, departamento, SO e quarta tabela de devolução. O relatório é baseado em `emprestimo` e não registra observações de devolução.
-
-## Conformidade com o enunciado
-
-A [matriz de conformidade](docs/CONFORMIDADE_APS_2026_2.md) relaciona cada requisito oficial
-com as classes e funcionalidades implementadas. A documentação acadêmica e a
-apresentação oral precisam ser verificadas separadamente do build Java.
-
-## Testar
-
-- `mvn -B -ntp verify` valida compilação, **não** substitui o teste com banco.
-- O GitHub Actions inicia um MySQL 8.4 **isolado** e executa as verificações dos três DAOs e do fluxo MVC.
-- Tests de integração manual: `UsuarioDAOManualTest`, `EquipamentoDAOManualCheck`, `EmprestimoDAOManualCheck`, `APSFluxoCheck` e `APSOrdenacaoCheck`.
-- Um smoke test do Swing verifica a criação das telas em display virtual no CI.
-
-Não rode testes de integração contra bancos de produção ou compartilhados: eles criam e apagam dados temporários.
+O repositório também possui verificações em `src/test/java`. Elas **não são necessárias para iniciar o programa**: servem para verificar o funcionamento dos DAOs, Controllers, ordenações e janelas Swing. Execute testes de integração somente em um banco de desenvolvimento.
 
 ## Equipe
 
-Lucas — Model, DAO, JDBC, MySQL e integração. Marianna — Swing e FlatLaf. Davi — Controller e validações. Aline — documentação e apresentação.
+- Lucas — Model, DAO, JDBC, MySQL e integração.
+- Marianna — interface Swing e FlatLaf.
+- Davi — Controllers e validações.
+- Aline — documentação e apresentação.
 
-## Revisão
-
-Esta é uma branch de integração para avaliação antes de qualquer merge na `main`. Alterações futuras de schema devem ocorrer por novas migrations após a definição da versão entregue.
+A branch continua em revisão pelo PR #7. A `main` não foi modificada.
