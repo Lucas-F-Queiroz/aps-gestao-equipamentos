@@ -32,10 +32,10 @@ public class APSFluxoCheck {
             equipamentoId = eq.getId();
 
             exigir(equipamentos.listarPorPatrimonio().stream()
-                    .anyMatch(item -> item.getId() == equipamentoId),
+                    .anyMatch(item -> item.getId() == eq.getId()),
                     "Ordenacao por patrimonio nao retorna o equipamento.");
             exigir(equipamentos.listarPorCategoria().stream()
-                    .anyMatch(item -> item.getId() == equipamentoId),
+                    .anyMatch(item -> item.getId() == eq.getId()),
                     "Ordenacao por categoria nao retorna o equipamento.");
 
             Emprestimo emprestimo = emprestimos.emprestar(
