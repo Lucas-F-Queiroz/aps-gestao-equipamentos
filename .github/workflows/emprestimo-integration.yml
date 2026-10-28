@@ -54,3 +54,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Abrir telas Swing em display virtual
         run: xvfb-run -a java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.integracao.APSViewCheck
+      - name: Validar clone sem application.properties usando Docker Compose
+        run: |
+          docker compose config --quiet
+          trap 'docker compose down -v' EXIT
+          docker compose up -d --wait mysql
+          rm -f src/main/resources/application.properties target/classes/application.properties
+          java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.integracao.APSFluxoCheck
