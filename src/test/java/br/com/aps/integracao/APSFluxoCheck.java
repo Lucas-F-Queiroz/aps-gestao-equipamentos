@@ -10,6 +10,16 @@ import java.util.UUID;
 
 /** Integracao JDBC + Controller, executada apenas contra MySQL isolado no CI. */
 public class APSFluxoCheck {
+    /** A integridade deve ser rejeitada em tempo de execucao, sem corromper dados. */
+    private static void exigirRejeicao(Runnable operacao, String mensagem) {
+        try {
+            operacao.run();
+        } catch (RegraNegocioException rejeicaoEsperada) {
+            return;
+        }
+        throw new AssertionError(mensagem);
+    }
+
     private static void exigir(boolean ok, String mensagem) {
         if (!ok) throw new AssertionError(mensagem);
     }
@@ -38,9 +48,26 @@ public class APSFluxoCheck {
                     .anyMatch(item -> item.getId() == eq.getId()),
                     "Ordenacao por categoria nao retorna o equipamento.");
 
+            exigirRejeicao(
+                () -> usuarios.cadastrar("", "invalido@example.com", Usuario.TIPO_ALUNO),
+                "Aceitou nome de usuario em branco.");
+            exigirRejeicao(
+                () -> usuarios.cadastrar("Email errado", "sem-arroba", Usuario.TIPO_ALUNO),
+                "Aceitou email invalido.");
+            exigirRejeicao(
+                () -> usuarios.cadastrar("Duplicado", usuario.getEmail(), Usuario.TIPO_ALUNO),
+                "Aceitou email duplicado.");
+            exigirRejeicao(
+                () -> equipamentos.cadastrar(eq.getPatrimonio(), "Duplicado", "NOTEBOOK", "BOM"),
+                "Aceitou patrimonio duplicado.");
+
             Emprestimo emprestimo = emprestimos.emprestar(
                 usuarioId, equipamentoId, LocalDate.now().plusDays(7));
             exigir(emprestimo.getId() > 0, "Emprestimo sem ID.");
+            exigirRejeicao(() -> usuarios.excluir(usuario.getId()),
+                "Permitiu excluir usuario com historico de emprestimo.");
+            exigirRejeicao(() -> equipamentos.excluir(eq.getId()),
+                "Permitiu excluir equipamento com historico de emprestimo.");
             exigir(Equipamento.STATUS_EMPRESTADO.equals(
                 new EquipamentoDAO().buscarPorId(equipamentoId).getStatus()),
                 "Equipamento nao ficou emprestado.");
