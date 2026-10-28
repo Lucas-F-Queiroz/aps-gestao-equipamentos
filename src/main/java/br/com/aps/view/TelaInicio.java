@@ -27,11 +27,11 @@ public class TelaInicio extends JPanel {
         JPanel apresentacao = new JPanel(new GridLayout(2, 1, 0, 5));
         apresentacao.setOpaque(false);
 
-        JLabel titulo = new JLabel("Gestao de emprestimos");
+        JLabel titulo = new JLabel("Gestão de empréstimos");
         titulo.setFont(titulo.getFont().deriveFont(java.awt.Font.BOLD, 25f));
         titulo.setForeground(Estilo.BARRA_LATERAL);
 
-        JLabel descricao = new JLabel("Selecione a area em que deseja trabalhar.");
+        JLabel descricao = new JLabel("Selecione a área em que deseja trabalhar.");
         descricao.setForeground(Estilo.TEXTO_SUAVE);
         apresentacao.add(titulo);
         apresentacao.add(descricao);
@@ -41,9 +41,9 @@ public class TelaInicio extends JPanel {
         areas.setOpaque(false);
         areas.add(criarAtalho(janela, 1, "Cadastros", "Pessoas e equipamentos",
             Icone.USUARIOS));
-        areas.add(criarAtalho(janela, 2, "Emprestimos", "Registrar e devolver",
+        areas.add(criarAtalho(janela, 2, "Empréstimos", "Registrar e devolver",
             Icone.PRANCHETA));
-        areas.add(criarAtalho(janela, 3, "Consultas", "Inventario, buscas e relatorios",
+        areas.add(criarAtalho(janela, 3, "Consultas", "Inventário, buscas e relatórios",
             Icone.LUPA));
         conteudo.add(areas, BorderLayout.CENTER);
 

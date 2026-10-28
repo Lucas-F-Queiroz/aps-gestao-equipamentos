@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.function.IntFunction;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -31,7 +32,7 @@ public class JanelaPrincipal extends JFrame {
 
     /** 0 = Inicio; 1 = Cadastros; 2 = Emprestimos; 3 = Consultas. */
     public JanelaPrincipal(int areaInicial) {
-        super("Gestao de Emprestimos de Equipamentos - TI Facil");
+        super("Gestão de Empréstimos de Equipamentos - TI Fácil");
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
@@ -59,7 +60,7 @@ public class JanelaPrincipal extends JFrame {
             BorderFactory.createMatteBorder(0, 0, 1, 0, Estilo.BORDA),
             BorderFactory.createEmptyBorder(10, 22, 10, 22)));
 
-        JLabel marca = new JLabel("TI Facil  |  Gestao de equipamentos");
+        JLabel marca = new JLabel("TI Fácil  |  Gestão de equipamentos");
         marca.setForeground(Estilo.BARRA_LATERAL);
         marca.setFont(marca.getFont().deriveFont(java.awt.Font.BOLD, 14f));
         barra.add(marca, BorderLayout.WEST);
@@ -89,11 +90,15 @@ public class JanelaPrincipal extends JFrame {
         JPanel conteudo = switch (area) {
             case 1 -> new TelaCadastros();
             case 2 -> criarAbas(
-                new String[]{"Registrar emprestimo", "Registrar devolucao"},
-                new JPanel[]{new TelaEmprestimos(), new TelaDevolucao()});
+                new String[]{"Registrar empréstimo", "Registrar devolução"},
+                indice -> indice == 0 ? new TelaEmprestimos() : new TelaDevolucao());
             case 3 -> criarAbas(
-                new String[]{"Inventario", "Situacao dos emprestimos", "Relatorios"},
-                new JPanel[]{new TelaEquipamentos(), new TelaConsultar(), new TelaRelatorios()});
+                new String[]{"Inventário", "Situação dos empréstimos", "Relatórios"},
+                indice -> switch (indice) {
+                    case 0 -> new TelaEquipamentos();
+                    case 1 -> new TelaConsultar();
+                    default -> new TelaRelatorios();
+                });
             default -> new TelaInicio(this);
         };
 
@@ -103,12 +108,22 @@ public class JanelaPrincipal extends JFrame {
         areaConteudo.repaint();
     }
 
-    /** JTabbedPane faz parte do Swing: nao precisamos de uma tela de navegacao extra. */
-    private JPanel criarAbas(String[] titulos, JPanel[] telas) {
+    /**
+     * Abas Swing padrao. Reconstroi somente a aba selecionada,
+     * para que emprestimos, devolucoes e consultas mostrem dados atuais.
+     */
+    private JPanel criarAbas(String[] titulos, IntFunction<JPanel> criarTela) {
         JTabbedPane abas = new JTabbedPane();
-        for (int i = 0; i < titulos.length; i++) {
-            abas.addTab(titulos[i], telas[i]);
+        for (String titulo : titulos) {
+            abas.addTab(titulo, new JPanel());
         }
+        abas.setComponentAt(0, criarTela.apply(0));
+        abas.addChangeListener(evento -> {
+            int indice = abas.getSelectedIndex();
+            if (indice >= 0) {
+                abas.setComponentAt(indice, criarTela.apply(indice));
+            }
+        });
 
         JPanel painel = new JPanel(new BorderLayout());
         painel.setOpaque(false);
