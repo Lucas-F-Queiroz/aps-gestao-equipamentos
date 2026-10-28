@@ -15,7 +15,7 @@ import java.time.format.ResolverStyle;
  * Os Controllers usam esta classe para validar o que vem da tela.
  *
  * Valores permitidos (o banco recusa qualquer outro):
- *   Usuario.areaProfissao texto livre (até 100); matrícula opcional única (até 50)
+ *   Usuario.tipo ALUNO, PROFESSOR ou FUNCIONARIO
  *   Equipamento.estado   NOVO, BOM, REGULAR, DANIFICADO
  *   Equipamento.status   DISPONIVEL, EMPRESTADO, INDISPONIVEL
  *   Emprestimo.status    ABERTO, DEVOLVIDO   (ATRASADO nao e gravado: e calculado pela data)
@@ -112,7 +112,7 @@ public final class Regras {
         return email;
     }
 
-    /** Confere se o valor e um dos permitidos (ex.: o tipo de usuario). Devolve o valor do banco. */
+    /** Confere se o valor e um dos permitidos; devolve o codigo do banco. */
     public static String exigirUm(String campo, String valor, String[] permitidos) {
         String codigo = valor == null ? "" : codigo(valor.trim());
         for (String permitido : permitidos) {
