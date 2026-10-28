@@ -20,7 +20,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 
 /**
- * Emprestimos: registra um emprestimo novo, seguindo as regras do Lucas:
+ * Emprestimos: registra uma retirada seguindo as regras de negocio:
  *   1. a pessoa precisa estar ativa;
  *   2. o equipamento precisa estar DISPONIVEL;
  *   3. um equipamento nao pode ter dois emprestimos abertos;

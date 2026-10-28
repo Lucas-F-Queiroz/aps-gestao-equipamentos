@@ -13,7 +13,7 @@ public class CadastroPessoas extends JPanel {
     private final JTextField nome = new JTextField();
     private final JTextField email = new JTextField();
     private final JComboBox<String> tipo = new JComboBox<>(new String[] {"ALUNO", "PROFESSOR", "FUNCIONARIO"});
-    private final JCheckBox ativo = new JCheckBox("Ativo", true);
+    private final JCheckBox ativo = new JCheckBox("Ativo (edição)", true);
     private final JTable tabela = Estilo.criarTabela(new String[]{"ID", "Nome", "E-mail", "Tipo", "Situação"});
     private final List<Usuario> linhas = new ArrayList<>();
 
@@ -35,6 +35,8 @@ public class CadastroPessoas extends JPanel {
         JButton excluir = Estilo.botao("Excluir");
         JButton limpar = Estilo.botao("Limpar");
         cadastro.add(Estilo.linhaBotoes(criar, salvar, excluir, limpar), BorderLayout.SOUTH);
+        // Novos cadastros nascem ativos. O campo so e editavel apos escolher uma pessoa.
+        ativo.setEnabled(false);
         add(cadastro, BorderLayout.NORTH);
         JPanel listagem = Estilo.cartao();
         listagem.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
@@ -76,6 +78,7 @@ public class CadastroPessoas extends JPanel {
         email.setText(u.getEmail());
         tipo.setSelectedItem(u.getTipo());
         ativo.setSelected(u.isAtivo());
+        ativo.setEnabled(true);
     }
 
     private void limpar() {
@@ -84,6 +87,7 @@ public class CadastroPessoas extends JPanel {
         email.setText("");
         tipo.setSelectedIndex(0);
         ativo.setSelected(true);
+        ativo.setEnabled(false);
     }
 
     private void carregar() {

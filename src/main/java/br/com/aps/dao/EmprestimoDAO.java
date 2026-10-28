@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Emprestimos e devolucoes em transacoes JDBC; preserva integridade historica. */
 public class EmprestimoDAO {
 
     private static final String COLUNAS =

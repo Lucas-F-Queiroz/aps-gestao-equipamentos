@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.Locale;
 
 /**
  * Valores de dominio e validacoes utilizados pelos Controllers.
@@ -58,7 +59,7 @@ public final class Regras {
             case "FUNCIONARIO":
                 return "Funcionário";
             default:
-                return codigo.substring(0, 1) + codigo.substring(1).toLowerCase(); // "BOM" -> "Bom"
+                return codigo.substring(0, 1) + codigo.substring(1).toLowerCase(Locale.ROOT); // "BOM" -> "Bom"
         }
     }
 
@@ -73,7 +74,7 @@ public final class Regras {
     /** Texto da tela -> valor do banco. Ex.: "Funcionário" vira "FUNCIONARIO". */
     public static String codigo(String rotulo) {
         String semAcento = Normalizer.normalize(rotulo, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        return semAcento.toUpperCase();
+        return semAcento.toUpperCase(Locale.ROOT);
     }
 
     /** Situacao mostrada na tela: Aberto, Atrasado (calculado pela data) ou Devolvido. */
@@ -106,7 +107,7 @@ public final class Regras {
 
     public static String exigirEmail(String valor) {
         String email = exigirTexto("e-mail", valor, EMAIL_MAX);
-        if (email.contains(" ") || !email.matches("[^@]+@[^@]+\\.[^@]+")) {
+        if (!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
             throw new RegraNegocioException("Informe um e-mail válido.");
         }
         return email;

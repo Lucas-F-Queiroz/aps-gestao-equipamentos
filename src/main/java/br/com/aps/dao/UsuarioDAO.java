@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Persistencia JDBC de pessoas. Nenhuma classe Swing deve chamar SQL diretamente. */
 public class UsuarioDAO {
 
     public void inserir(Usuario usuario) throws SQLException {

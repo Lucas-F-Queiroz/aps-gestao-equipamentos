@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Persistencia dos equipamentos. Status operacional e alterado em operacao separada. */
 public class EquipamentoDAO {
 
     private static final String COLUNAS =
