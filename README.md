@@ -53,11 +53,17 @@ A navegação e os componentes visuais foram reaproveitados da branch `feature/a
 
 **Fora de escopo:** matrícula, área/profissão livre, marca, modelo, série, departamento, SO e quarta tabela de devolução. O relatório é baseado em `emprestimo` e não registra observações de devolução.
 
+## Conformidade com o enunciado
+
+A [matriz de conformidade](docs/CONFORMIDADE_APS_2026_2.md) relaciona cada requisito oficial
+com as classes e funcionalidades implementadas. A documentação acadêmica e a
+apresentação oral precisam ser verificadas separadamente do build Java.
+
 ## Testar
 
 - `mvn -B -ntp verify` valida compilação, **não** substitui o teste com banco.
 - O GitHub Actions inicia um MySQL 8.4 **isolado** e executa as verificações dos três DAOs e do fluxo MVC.
-- Tests de integração manual: `UsuarioDAOManualTest`, `EquipamentoDAOManualCheck`, `EmprestimoDAOManualCheck` e `APSFluxoCheck`.
+- Tests de integração manual: `UsuarioDAOManualTest`, `EquipamentoDAOManualCheck`, `EmprestimoDAOManualCheck`, `APSFluxoCheck` e `APSOrdenacaoCheck`.
 - Um smoke test do Swing verifica a criação das telas em display virtual no CI.
 
 Não rode testes de integração contra bancos de produção ou compartilhados: eles criam e apagam dados temporários.
