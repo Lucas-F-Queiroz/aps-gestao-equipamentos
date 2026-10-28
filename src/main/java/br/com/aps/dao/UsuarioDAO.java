@@ -15,8 +15,8 @@ public class UsuarioDAO {
 
     public void inserir(Usuario usuario) throws SQLException {
         String sql = """
-                INSERT INTO usuario (nome, email, tipo, ativo)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO usuario (nome, email, area_profissao, ativo, matricula)
+                VALUES (?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = ConnectionFactory.getConnection();
@@ -27,6 +27,7 @@ public class UsuarioDAO {
             statement.setString(2, usuario.getEmail());
             statement.setString(3, usuario.getTipo());
             statement.setBoolean(4, usuario.isAtivo());
+            statement.setString(5, usuario.getMatricula());
 
             statement.executeUpdate();
 
@@ -40,7 +41,7 @@ public class UsuarioDAO {
 
     public List<Usuario> listar() throws SQLException {
         String sql = """
-                SELECT id, nome, email, tipo, ativo
+                SELECT id, nome, email, area_profissao, ativo, matricula
                 FROM usuario
                 ORDER BY nome ASC, id ASC
                 """;
@@ -62,7 +63,7 @@ public class UsuarioDAO {
     // Retorna null se nao existir usuario com o ID informado.
     public Usuario buscarPorId(int id) throws SQLException {
         String sql = """
-                SELECT id, nome, email, tipo, ativo
+                SELECT id, nome, email, area_profissao, ativo, matricula
                 FROM usuario
                 WHERE id = ?
                 """;
@@ -85,7 +86,7 @@ public class UsuarioDAO {
     // Busca parcial: "ana" encontra "Ana Maria", conforme a collation do banco.
     public List<Usuario> buscarPorNome(String nome) throws SQLException {
         String sql = """
-                SELECT id, nome, email, tipo, ativo
+                SELECT id, nome, email, area_profissao, ativo, matricula
                 FROM usuario
                 WHERE nome LIKE ?
                 ORDER BY nome ASC, id ASC
@@ -112,7 +113,7 @@ public class UsuarioDAO {
     public boolean atualizar(Usuario usuario) throws SQLException {
         String sql = """
                 UPDATE usuario
-                SET nome = ?, email = ?, tipo = ?, ativo = ?
+                SET nome = ?, email = ?, area_profissao = ?, ativo = ?, matricula = ?
                 WHERE id = ?
                 """;
 
@@ -123,7 +124,8 @@ public class UsuarioDAO {
             statement.setString(2, usuario.getEmail());
             statement.setString(3, usuario.getTipo());
             statement.setBoolean(4, usuario.isAtivo());
-            statement.setInt(5, usuario.getId());
+            statement.setString(5, usuario.getMatricula());
+            statement.setInt(6, usuario.getId());
 
             return statement.executeUpdate() > 0;
         }
@@ -144,12 +146,14 @@ public class UsuarioDAO {
     }
 
     private Usuario mapearUsuario(ResultSet resultSet) throws SQLException {
-        return new Usuario(
+        Usuario usuario = new Usuario(
                 resultSet.getInt("id"),
                 resultSet.getString("nome"),
                 resultSet.getString("email"),
-                resultSet.getString("tipo"),
+                resultSet.getString("area_profissao"),
                 resultSet.getBoolean("ativo")
         );
+        usuario.setMatricula(resultSet.getString("matricula"));
+        return usuario;
     }
 }

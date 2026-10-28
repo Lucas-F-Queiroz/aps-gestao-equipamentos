@@ -14,12 +14,12 @@ import java.util.List;
 public class EquipamentoDAO {
 
     private static final String COLUNAS =
-            "id, patrimonio, nome, categoria, estado, status";
+            "id, patrimonio, nome, categoria, estado, status, modelo, marca, numero_serie, sistema_operacional, departamento";
 
     public void inserir(Equipamento equipamento) throws SQLException {
         String sql = """
-                INSERT INTO equipamento (patrimonio, nome, categoria, estado, status)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO equipamento (patrimonio, nome, categoria, estado, status, modelo, marca, numero_serie, sistema_operacional, departamento)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = ConnectionFactory.getConnection();
@@ -31,6 +31,12 @@ public class EquipamentoDAO {
             statement.setString(3, equipamento.getCategoria());
             statement.setString(4, equipamento.getEstado());
             statement.setString(5, equipamento.getStatus());
+            statement.setString(6, equipamento.getModelo());
+            statement.setString(7, equipamento.getMarca());
+            statement.setString(8, equipamento.getNumeroSerie());
+            statement.setString(9, equipamento.getSistemaOperacional());
+            statement.setString(10, equipamento.getDepartamento());
+
 
             statement.executeUpdate();
 
@@ -145,7 +151,7 @@ public class EquipamentoDAO {
     public boolean atualizar(Equipamento equipamento) throws SQLException {
         String sql = """
                 UPDATE equipamento
-                SET patrimonio = ?, nome = ?, categoria = ?, estado = ?, status = ?
+                SET patrimonio = ?, nome = ?, categoria = ?, estado = ?, status = ?, modelo = ?, marca = ?, numero_serie = ?, sistema_operacional = ?, departamento = ?
                 WHERE id = ?
                 """;
 
@@ -157,7 +163,13 @@ public class EquipamentoDAO {
             statement.setString(3, equipamento.getCategoria());
             statement.setString(4, equipamento.getEstado());
             statement.setString(5, equipamento.getStatus());
-            statement.setInt(6, equipamento.getId());
+            statement.setString(6, equipamento.getModelo());
+            statement.setString(7, equipamento.getMarca());
+            statement.setString(8, equipamento.getNumeroSerie());
+            statement.setString(9, equipamento.getSistemaOperacional());
+            statement.setString(10, equipamento.getDepartamento());
+
+            statement.setInt(11, equipamento.getId());
 
             return statement.executeUpdate() > 0;
         }
@@ -195,7 +207,7 @@ public class EquipamentoDAO {
     }
 
     private Equipamento mapearEquipamento(ResultSet resultado) throws SQLException {
-        return new Equipamento(
+        Equipamento equipamento = new Equipamento(
                 resultado.getInt("id"),
                 resultado.getString("patrimonio"),
                 resultado.getString("nome"),
@@ -203,5 +215,11 @@ public class EquipamentoDAO {
                 resultado.getString("estado"),
                 resultado.getString("status")
         );
+        equipamento.setModelo(resultado.getString("modelo"));
+        equipamento.setMarca(resultado.getString("marca"));
+        equipamento.setNumeroSerie(resultado.getString("numero_serie"));
+        equipamento.setSistemaOperacional(resultado.getString("sistema_operacional"));
+        equipamento.setDepartamento(resultado.getString("departamento"));
+        return equipamento;
     }
 }

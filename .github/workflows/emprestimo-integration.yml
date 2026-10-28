@@ -1,4 +1,4 @@
-name: Testar DAOs com MySQL
+name: Testar banco e interface com MySQL
 
 on:
   pull_request:
@@ -56,3 +56,12 @@ jobs:
           for teste in UsuarioDAOManualTest EquipamentoDAOManualCheck EmprestimoDAOManualCheck; do
             java -cp "target/classes:target/test-classes:target/dependency/*" "br.com.aps.dao.$teste"
           done
+
+      - name: Testar Controllers e regras do Lucas (banco real)
+        run: java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.controller.ControllerManualCheck
+
+      - name: Instalar display virtual para testar as telas
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Testar as telas com o banco (usa o application.properties temporario)
+        run: xvfb-run -a java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.view.ViewsSmokeCheck

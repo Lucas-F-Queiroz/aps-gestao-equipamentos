@@ -116,7 +116,7 @@ public class EmprestimoDAOManualCheck {
 
     private static int criarUsuario(String email) throws SQLException {
         String sql = """
-                INSERT INTO usuario (nome, email, tipo, ativo)
+                INSERT INTO usuario (nome, email, area_profissao, ativo)
                 VALUES ('Usuario Teste Emprestimo', ?, 'ALUNO', TRUE)
                 """;
         try (Connection c = ConnectionFactory.getConnection();
@@ -134,8 +134,8 @@ public class EmprestimoDAOManualCheck {
 
     private static int criarEquipamento(String patrimonio) throws SQLException {
         String sql = """
-                INSERT INTO equipamento (patrimonio, nome, categoria, estado, status)
-                VALUES (?, 'Notebook Teste Emprestimo', 'NOTEBOOK', 'BOM', 'DISPONIVEL')
+                INSERT INTO equipamento (patrimonio, nome, categoria, estado, status, modelo, marca, numero_serie)
+                VALUES (?, 'Notebook Teste Emprestimo', 'NOTEBOOK', 'BOM', 'DISPONIVEL', 'Modelo teste', 'Marca teste', UUID())
                 """;
         try (Connection c = ConnectionFactory.getConnection();
              PreparedStatement p = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {

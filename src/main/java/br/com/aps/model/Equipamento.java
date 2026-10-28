@@ -11,6 +11,11 @@ public class Equipamento {
     public static final String STATUS_EMPRESTADO = "EMPRESTADO";
     public static final String STATUS_INDISPONIVEL = "INDISPONIVEL";
 
+    private String modelo;
+    private String marca;
+    private String numeroSerie;
+    private String sistemaOperacional;
+    private String departamento;
     private int id;
     private String patrimonio;
     private String nome;
@@ -27,6 +32,9 @@ public class Equipamento {
         this.patrimonio = patrimonio;
         this.nome = nome;
         this.categoria = categoria;
+        this.modelo = nome;
+        this.marca = "Não informado";
+        this.numeroSerie = patrimonio;
         this.estado = estado;
         this.status = status;
     }
@@ -83,4 +91,19 @@ public class Equipamento {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public String getModelo() { return modelo; }
+    public void setModelo(String valor) { modelo = valor; }
+
+    public String getMarca() { return marca; }
+    public void setMarca(String valor) { marca = valor; }
+
+    public String getNumeroSerie() { return numeroSerie; }
+    public void setNumeroSerie(String valor) { numeroSerie = valor; }
+
+    public String getSistemaOperacional() { return sistemaOperacional; }
+    public void setSistemaOperacional(String valor) { sistemaOperacional = valor; }
+
+    public String getDepartamento() { return departamento; }
+    public void setDepartamento(String valor) { departamento = valor; }
 }
