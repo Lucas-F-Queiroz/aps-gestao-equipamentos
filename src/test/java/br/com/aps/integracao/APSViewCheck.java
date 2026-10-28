@@ -10,6 +10,14 @@ public class APSViewCheck {
         DatabaseMigrator.migrate();
         SwingUtilities.invokeAndWait(() -> {
             Estilo.instalar();
+            // Confere as tres areas de navegacao e o retorno ao inicio.
+            JanelaPrincipal janela = new JanelaPrincipal();
+            janela.mostrar(1);
+            janela.mostrar(2);
+            janela.mostrar(3);
+            janela.mostrar(0);
+            janela.dispose();
+
             JPanel[] telas = {
                 new TelaInicio(new JanelaPrincipal(1)),
                 new TelaEquipamentos(), new TelaCadastros(),

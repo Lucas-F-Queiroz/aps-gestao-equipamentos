@@ -15,7 +15,7 @@ Nenhum teste de código comprova a entrega do relatório/slide.
 | Pelo menos 2 tabelas entidade + tabela associativa | `usuario`, `equipamento`, `emprestimo` | Implementado |
 | Classes Java equivalentes às entidades | 3 classes em `model` | Implementado |
 | Relacionamento e integridade PK/FK | `emprestimo.usuario_id`, `equipamento_id`, FKs e `ON DELETE RESTRICT` | Implementado |
-| Listar registros | Cadastros, Inventário, Empréstimos, Consultar | Implementado |
+| Listar registros | Cadastros e abas de Empréstimos/Consultas | Implementado |
 | Ordenar por mais de um critério | Inventário: nome/patrimônio, patrimônio/ID, categoria/nome; `EquipamentoDAO` | Implementado; teste `APSOrdenacaoCheck` |
 | Filtrar/buscar | Inventário e Consultar, com campo de busca e filtro de situação | Implementado |
 | Adicionar registros pela interface | Cadastro de pessoas, equipamentos e empréstimos | Implementado |

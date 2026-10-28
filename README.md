@@ -40,6 +40,17 @@ View (Swing) → Controller → DAO (JDBC/SQL) → MySQL
 - **DAO**: consultas SQL por JDBC, inserção, atualização, exclusão e transações.
 - **MySQL**: tabelas e integridade dos dados. `Aplicacao.java` executa o Flyway antes de abrir a interface.
 
+## Navegacao
+
+A pagina inicial possui apenas tres acessos:
+
+- **Cadastros:** registrar e editar pessoas ou equipamentos.
+- **Emprestimos:** abas para emprestar e registrar devolucao.
+- **Consultas:** abas para inventario, busca de emprestimos e relatorio CSV.
+
+A tela inicial nao faz consultas periodicas ao banco. As abas apenas organizam
+as telas Swing ja existentes, sem adicionar entidades, tabelas ou novas regras.
+
 ## Banco e regras principais
 
 O banco possui **três tabelas**: `usuario`, `equipamento` e a tabela de relação `emprestimo`. Os vínculos são mantidos pelas chaves estrangeiras `emprestimo.usuario_id` e `emprestimo.equipamento_id`, conforme a orientação do professor.
