@@ -1,0 +1,37 @@
+NO CODIGO DO ECLIPSE
+Aps-gestao-equipamentos
+  -src/main/resouces
+	-copie e cole novamente no mesmo lugar application.properties.example
+	-renomei o arquivo novo como application.properties apenas
+cole esse codigo abaixo dentro do arquivo:
+db.url=jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+db.user=root
+db.password=SUA SENHA DO MYSQL (root)
+
+Salve com CTRL S e apertando com o botão direito em cima de "aps-gestao-equipamentos" de um refresh ou use o F5
+ 
+
+DENTRO DO WORKBENCH
+Cole esse Texto no Workbench e de o RUN :
+CREATE DATABASE IF NOT EXISTS aps_equipamentos
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+USE aps_equipamentos;
+
+E DEPOIS:
+
+USE aps_equipamentos;
+
+SELECT installed_rank, version, description, success
+FROM flyway_schema_history
+ORDER BY installed_rank;
+
+
+depois de tudo isso entre no eclipse novamente
+
+aps-gestao-equipamentos
+	- src/main/java
+	-package de nome br.com.aps
+	-aplicacao.java
+	RUN AS 

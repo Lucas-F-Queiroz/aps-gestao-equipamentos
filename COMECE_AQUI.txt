@@ -1,0 +1,12 @@
+APS — INTERFACE ATUALIZADA
+
+Leia README.md para as alterações e o passo a passo.
+
+1. Extraia em uma pasta nova e importe como Existing Maven Projects no Eclipse.
+2. Configure src/main/resources/application.properties usando o arquivo .example.
+3. Maven > Update Project e Project > Clean.
+4. Execute br.com.aps.Aplicacao.
+
+Mantenha seu banco atual. O Flyway aplica as migrações pendentes até V5 automaticamente.
+V5 acrescenta o responsável pelo relatório de devolução.
+Relatórios são salvos no MySQL e exportados em CSV pelos botões de download.
