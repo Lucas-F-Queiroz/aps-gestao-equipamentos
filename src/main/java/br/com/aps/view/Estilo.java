@@ -216,7 +216,7 @@ public class Estilo {
         for (int i = 0; i < larguras.length; i++) {
             tabela.getColumnModel().getColumn(i).setPreferredWidth(larguras[i]);
         }
-        // A primeira coluna (ID) nunca estica: fica estreita mesmo com a tela cheia.
+        // A primeira coluna e estreita nas tabelas operacionais (ID ou patrimonio).
         tabela.getColumnModel().getColumn(0).setMaxWidth(larguras[0] + 20);
     }
 

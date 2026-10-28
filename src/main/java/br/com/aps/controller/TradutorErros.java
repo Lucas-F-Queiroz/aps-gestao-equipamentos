@@ -37,7 +37,7 @@ public final class TradutorErros {
 
         if (estado.startsWith("08")) {
             return new RegraNegocioException(
-                "Não foi possível conectar ao banco. Verifique se o MySQL está ligado e o application.properties.",
+                "Não foi possível conectar ao MySQL. Verifique se o banco está iniciado e a configuração de conexão.",
                 erro);
         }
         return new RegraNegocioException("Erro ao acessar o banco de dados.", erro);

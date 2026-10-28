@@ -17,6 +17,24 @@ public class EquipamentoController {
         catch (SQLException e) { throw TradutorErros.traduzir(e); }
     }
 
+    /** Ordenacao por patrimonio e ID, definida pelo DAO (sem SQL na View). */
+    public List<Equipamento> listarPorPatrimonio() {
+        try {
+            return dao.listarOrdenadoPorPatrimonio();
+        } catch (SQLException erro) {
+            throw TradutorErros.traduzir(erro);
+        }
+    }
+
+    /** Ordenacao por categoria, nome e ID, definida pelo DAO. */
+    public List<Equipamento> listarPorCategoria() {
+        try {
+            return dao.listarOrdenadoPorCategoria();
+        } catch (SQLException erro) {
+            throw TradutorErros.traduzir(erro);
+        }
+    }
+
     public List<Equipamento> listarDisponiveis() {
         try { return dao.listarPorStatus(Equipamento.STATUS_DISPONIVEL); }
         catch (SQLException e) { throw TradutorErros.traduzir(e); }

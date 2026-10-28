@@ -5,6 +5,7 @@ import br.com.aps.model.EmprestimoDetalhe;
 import br.com.aps.model.Equipamento;
 import br.com.aps.controller.Regras;
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -14,6 +15,9 @@ import javax.swing.*;
 public class TelaEquipamentos extends JPanel {
     private final JLabel totais = new JLabel();
     private final JTextField busca = new JTextField();
+    private final JComboBox<String> ordenacao = new JComboBox<>(new String[]{
+        "Nome e patrimônio", "Patrimônio e ID", "Categoria e nome"
+    });
     private final JTable tabela = Estilo.criarTabela(new String[]{
         "Patrimônio", "Equipamento", "Categoria", "Estado", "Status", "Com quem", "Prevista"});
 
@@ -28,17 +32,27 @@ public class TelaEquipamentos extends JPanel {
         add(cabecalho, BorderLayout.NORTH);
         JPanel painel = Estilo.cartao();
         busca.putClientProperty("JTextField.placeholderText", "Buscar patrimônio, nome ou categoria");
-        painel.add(Estilo.campo("Busca", busca), BorderLayout.NORTH);
+        JPanel filtros = new JPanel(new GridLayout(1, 2, 12, 0));
+        filtros.setOpaque(false);
+        filtros.add(Estilo.campo("Buscar", busca));
+        filtros.add(Estilo.campo("Ordenar por", ordenacao));
+        painel.add(filtros, BorderLayout.NORTH);
         painel.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
         add(painel, BorderLayout.CENTER);
         atualizar.addActionListener(e -> carregar());
         busca.addActionListener(e -> carregar());
+        ordenacao.addActionListener(e -> carregar());
         carregar();
     }
 
     private void carregar() {
         try {
-            var equipamentos = Aplicacao.equipamentos().listar();
+            // Cada criterio utiliza ORDER BY explicito no DAO (inclusive desempate).
+            var equipamentos = switch (ordenacao.getSelectedIndex()) {
+                case 1 -> Aplicacao.equipamentos().listarPorPatrimonio();
+                case 2 -> Aplicacao.equipamentos().listarPorCategoria();
+                default -> Aplicacao.equipamentos().listar();
+            };
             Map<Integer, EmprestimoDetalhe> abertos = new HashMap<>();
             for (EmprestimoDetalhe d : Aplicacao.emprestimos().abertos()) {
                 abertos.put(d.emprestimo().getEquipamentoId(), d);

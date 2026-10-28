@@ -31,6 +31,13 @@ public class APSFluxoCheck {
                 "NOTEBOOK", Equipamento.ESTADO_BOM);
             equipamentoId = eq.getId();
 
+            exigir(equipamentos.listarPorPatrimonio().stream()
+                    .anyMatch(item -> item.getId() == equipamentoId),
+                    "Ordenacao por patrimonio nao retorna o equipamento.");
+            exigir(equipamentos.listarPorCategoria().stream()
+                    .anyMatch(item -> item.getId() == equipamentoId),
+                    "Ordenacao por categoria nao retorna o equipamento.");
+
             Emprestimo emprestimo = emprestimos.emprestar(
                 usuarioId, equipamentoId, LocalDate.now().plusDays(7));
             exigir(emprestimo.getId() > 0, "Emprestimo sem ID.");

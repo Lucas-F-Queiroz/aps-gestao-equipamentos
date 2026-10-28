@@ -11,7 +11,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 
 /**
- * As regras e limites definidos pelo Lucas (README e banco de dados), num lugar so.
+ * Valores de dominio e validacoes utilizados pelos Controllers.
  * Os Controllers usam esta classe para validar o que vem da tela.
  *
  * Valores permitidos (o banco recusa qualquer outro):
@@ -22,7 +22,7 @@ import java.time.format.ResolverStyle;
  *
  * Tamanhos maximos (colunas VARCHAR do banco):
  *   usuario.nome 100 | usuario.email 120 (unico) | equipamento.patrimonio 50 (unico)
- *   equipamento.nome 100 | equipamento.categoria 50 | devolucao.observacao 255
+ *   equipamento.nome 100 | equipamento.categoria 50
  */
 public final class Regras {
     public static final String[] TIPOS_USUARIO = {
