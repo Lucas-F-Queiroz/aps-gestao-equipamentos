@@ -52,7 +52,7 @@ public final class APSContatoViewCheck {
                 Path csv = null;
                 try {
                     csv = Files.createTempFile("aps-contatos-ficticios", ".csv");
-                    ExportadorRelatorio.salvar(relatorio, csv);
+                    ExportadorRelatorio.salvar(relatorio, csv, () -> true);
                     String conteudo = Files.readString(csv);
                     exigir(conteudo.contains("CPF") && conteudo.contains("Celular")
                             && conteudo.contains("01234567890") && conteudo.contains("11912345678"),

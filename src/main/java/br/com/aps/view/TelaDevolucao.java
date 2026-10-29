@@ -59,8 +59,9 @@ public class TelaDevolucao extends JPanel {
 
     private void carregar() {
         try {
+            var emprestimos = TarefaBanco.consultar(this, Aplicacao.emprestimos()::abertos);
             linhas.clear();
-            linhas.addAll(Aplicacao.emprestimos().abertos());
+            linhas.addAll(emprestimos);
             Estilo.modelo(tabela).setRowCount(0);
             for (EmprestimoDetalhe d : linhas) {
                 Emprestimo e = d.emprestimo();
@@ -86,7 +87,7 @@ public class TelaDevolucao extends JPanel {
             return;
         }
         try {
-            Aplicacao.emprestimos().devolver(d.emprestimo().getId());
+            TarefaBanco.executar(this, () -> Aplicacao.emprestimos().devolver(d.emprestimo().getId()));
             carregar();
             Mensagens.info(this, "Devolução registrada. O equipamento está disponível.");
         } catch (RuntimeException erro) {

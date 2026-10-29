@@ -94,7 +94,7 @@ public final class APSFiltroCheck {
         filtro.pesquisar("notebook");
         try {
             Path arquivo = Files.createTempFile("aps-relatorio", ".csv");
-            ExportadorRelatorio.salvar(tabela, arquivo);
+            ExportadorRelatorio.salvar(tabela, arquivo, () -> true);
             List<String> linhasDoArquivo = Files.readAllLines(arquivo);
             Files.delete(arquivo);
             exigir(linhasDoArquivo.size() == 3, "CSV: cabecalho + 2 notebooks filtrados: " + linhasDoArquivo.size());
