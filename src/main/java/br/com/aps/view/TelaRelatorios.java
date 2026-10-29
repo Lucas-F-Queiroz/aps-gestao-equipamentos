@@ -105,7 +105,7 @@ public class TelaRelatorios extends JPanel {
 
     private JPanel relatorioDeCadastros() {
         JTable tabela = Estilo.criarTabela(new String[]{"ID", "Nome", "E-mail", "CPF", "Celular", "Função", "Situação"});
-        for (Usuario u : Aplicacao.usuarios().listar()) {
+        for (Usuario u : TarefaBanco.consultar(this, Aplicacao.usuarios()::listar)) {
             Estilo.modelo(tabela).addRow(new Object[]{u.getId(), u.getNome(), u.getEmail(),
                 u.getCpf(), u.getCelular(), Regras.rotulo(u.getTipo()), u.isAtivo() ? "Ativo" : "Inativo"});
         }
@@ -118,7 +118,7 @@ public class TelaRelatorios extends JPanel {
     private JPanel relatorioDeEmprestimos() {
         JTable tabela = Estilo.criarTabela(new String[]{
             "ID", "Pessoa", "Equipamento", "Retirada", "Devolução prevista", "Devolvido em", "Situação"});
-        for (EmprestimoDetalhe d : Aplicacao.emprestimos().listarDetalhado()) {
+        for (EmprestimoDetalhe d : TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado)) {
             Emprestimo e = d.emprestimo();
             Estilo.modelo(tabela).addRow(new Object[]{e.getId(), d.usuarioNome(),
                 d.equipamentoNome() + " (" + d.equipamentoPatrimonio() + ")", Estilo.dia(e.getDataRetirada()),
@@ -134,7 +134,7 @@ public class TelaRelatorios extends JPanel {
 
     private JPanel relatorioDeEquipamentos() {
         JTable tabela = Estilo.criarTabela(new String[]{"ID", "Patrimônio", "Nome", "Categoria", "Estado", "Status"});
-        for (Equipamento e : Aplicacao.equipamentos().listar()) {
+        for (Equipamento e : TarefaBanco.consultar(this, Aplicacao.equipamentos()::listar)) {
             Estilo.modelo(tabela).addRow(new Object[]{e.getId(), e.getPatrimonio(), e.getNome(), e.getCategoria(),
                 Regras.rotulo(e.getEstado()), Regras.rotulo(e.getStatus())});
         }
@@ -148,13 +148,14 @@ public class TelaRelatorios extends JPanel {
 
     /** Geral: os totais do sistema, em tres grupos de cartoes. */
     private JPanel relatorioGeral() {
-        List<Equipamento> equipamentos = Aplicacao.equipamentos().listar();
-        List<EmprestimoDetalhe> emprestimos = Aplicacao.emprestimos().listarDetalhado();
+        List<Equipamento> equipamentos = TarefaBanco.consultar(this, Aplicacao.equipamentos()::listar);
+        List<EmprestimoDetalhe> emprestimos = TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado);
+        int pessoas = TarefaBanco.consultar(this, () -> Aplicacao.usuarios().listar().size());
 
         JPanel numeros = new JPanel(new GridLayout(3, 1, 0, 16)); // 3 grupos, um embaixo do outro
         numeros.setOpaque(false);
         numeros.add(grupo("Cadastros", 2,
-            Estilo.cartaoNumero("Total de usuários", String.valueOf(Aplicacao.usuarios().listar().size()), Estilo.AZUL),
+            Estilo.cartaoNumero("Total de usuários", String.valueOf(pessoas), Estilo.AZUL),
             Estilo.cartaoNumero("Total de equipamentos", String.valueOf(equipamentos.size()), new Color(124, 58, 237))));
         numeros.add(grupo("Situação dos equipamentos", 3,
             Estilo.cartaoNumero("Disponíveis", contar(equipamentos, Equipamento.STATUS_DISPONIVEL), Estilo.VERDE),
@@ -192,8 +193,12 @@ public class TelaRelatorios extends JPanel {
         escolha.setSelectedFile(new File(nomeDoArquivo));
         if (escolha.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                ExportadorRelatorio.salvar(tabela, escolha.getSelectedFile().toPath());
-                Mensagens.info(this, "Arquivo salvo: " + escolha.getSelectedFile().getName());
+                File arquivo = escolha.getSelectedFile();
+                if (ExportadorRelatorio.salvar(tabela, arquivo.toPath(),
+                        () -> Mensagens.confirmar(this, "O arquivo " + arquivo.getName()
+                            + " já existe. Deseja substituí-lo?"))) {
+                    Mensagens.info(this, "Arquivo salvo: " + arquivo.getName());
+                }
             } catch (IOException erro) {
                 Mensagens.aviso(this, "Não foi possível salvar o arquivo.");
             }

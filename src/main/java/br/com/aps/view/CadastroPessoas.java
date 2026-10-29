@@ -87,13 +87,13 @@ public class CadastroPessoas extends JPanel {
 
         // ---------- botoes
         criar.addActionListener(e -> executar(() -> {
-            Aplicacao.usuarios().cadastrar(nome.getText(), email.getText(),
+            cadastrar(nome.getText(), email.getText(),
                 Regras.codigo((String) funcao.getSelectedItem()), cpf.getText(), celular.getText());
             limpar();
         }));
         salvar.addActionListener(e -> executar(() -> {
             Usuario u = exigirSelecao();
-            Aplicacao.usuarios().atualizar(u.getId(), nome.getText(), email.getText(),
+            atualizar(u.getId(), nome.getText(), email.getText(),
                 Regras.codigo((String) funcao.getSelectedItem()), ativo.isSelected(), cpf.getText(), celular.getText());
         }));
         excluirForm.addActionListener(e -> Mensagens.executar(this, this::excluir));
@@ -110,7 +110,7 @@ public class CadastroPessoas extends JPanel {
     /** Visualizar: somente leitura, com o resumo dos emprestimos da pessoa. */
     private void visualizar() {
         Usuario u = exigirSelecao();
-        List<EmprestimoDetalhe> dela = Aplicacao.emprestimos().listarDetalhado().stream()
+        List<EmprestimoDetalhe> dela = TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado).stream()
             .filter(d -> d.emprestimo().getUsuarioId() == u.getId()).collect(Collectors.toList());
         String emUso = dela.stream()
             .filter(d -> Emprestimo.STATUS_ABERTO.equals(d.emprestimo().getStatus()))
@@ -144,7 +144,7 @@ public class CadastroPessoas extends JPanel {
             .campo("Nome", campoNome).campo("E-mail", campoEmail)
             .campo("CPF (opcional)", campoCpf).campo("Celular com DDD (opcional)", campoCelular)
             .campo("Função", campoFuncao).campo("Situação", campoSituacao);
-        if (modal.exibir(() -> Aplicacao.usuarios().atualizar(u.getId(), campoNome.getText(),
+        if (modal.exibir(() -> atualizar(u.getId(), campoNome.getText(),
                 campoEmail.getText(), Regras.codigo((String) campoFuncao.getSelectedItem()),
                 "Ativo".equals(campoSituacao.getSelectedItem()), campoCpf.getText(), campoCelular.getText()))) {
             carregar();
@@ -161,7 +161,7 @@ public class CadastroPessoas extends JPanel {
             .info("Nome", u.getNome())
             .selo("Situação atual", u.isAtivo() ? "Ativo" : "Inativo")
             .campo("Nova situação", novaSituacao);
-        if (modal.exibir(() -> Aplicacao.usuarios().atualizar(u.getId(), u.getNome(), u.getEmail(),
+        if (modal.exibir(() -> atualizar(u.getId(), u.getNome(), u.getEmail(),
                 u.getTipo(), "Ativo".equals(novaSituacao.getSelectedItem()), u.getCpf(), u.getCelular()))) {
             carregar();
         }
@@ -170,13 +170,21 @@ public class CadastroPessoas extends JPanel {
     private void excluir() {
         Usuario u = exigirSelecao();
         if (Mensagens.confirmar(this, "Excluir " + u.getNome() + "?")) {
-            Aplicacao.usuarios().excluir(u.getId());
+            TarefaBanco.executar(this, () -> Aplicacao.usuarios().excluir(u.getId()));
             limpar();
             carregar();
         }
     }
 
     // ------------------------------------------------------------ apoio
+
+    private void cadastrar(String nome, String email, String tipo, String cpf, String celular) {
+        TarefaBanco.executar(this, () -> Aplicacao.usuarios().cadastrar(nome, email, tipo, cpf, celular));
+    }
+
+    private void atualizar(int id, String nome, String email, String tipo, boolean ativo, String cpf, String celular) {
+        TarefaBanco.executar(this, () -> Aplicacao.usuarios().atualizar(id, nome, email, tipo, ativo, cpf, celular));
+    }
 
     private Usuario exigirSelecao() {
         Usuario u = selecionado();
@@ -215,8 +223,9 @@ public class CadastroPessoas extends JPanel {
 
     private void carregar() {
         Usuario anterior = selecionado(); // para manter a mesma linha escolhida depois de recarregar
+        List<Usuario> atualizadas = TarefaBanco.consultar(this, Aplicacao.usuarios()::listar);
         linhas.clear();
-        linhas.addAll(Aplicacao.usuarios().listar());
+        linhas.addAll(atualizadas);
         Estilo.modelo(tabela).setRowCount(0);
         for (Usuario u : linhas) {
             Estilo.modelo(tabela).addRow(new Object[]{u.getId(), u.getNome(), u.getEmail(),

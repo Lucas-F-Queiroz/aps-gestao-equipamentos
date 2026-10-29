@@ -46,8 +46,9 @@ public class TelaConsultar extends JPanel {
     /** Carrega os objetos devolvidos pelo Controller; nao acessa JDBC. */
     private void carregar() {
         try {
+            var emprestimos = TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado);
             Estilo.modelo(tabela).setRowCount(0);
-            for (EmprestimoDetalhe d : Aplicacao.emprestimos().listarDetalhado()) {
+            for (EmprestimoDetalhe d : emprestimos) {
                 Emprestimo e = d.emprestimo();
                 Estilo.modelo(tabela).addRow(new Object[]{
                     e.getId(), d.usuarioNome(),

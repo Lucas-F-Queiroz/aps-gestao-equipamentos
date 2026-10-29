@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.function.BooleanSupplier;
 
 import javax.swing.JTable;
 
@@ -13,7 +15,20 @@ public final class ExportadorRelatorio {
     }
 
     public static void salvar(JTable tabela, Path destino) throws IOException {
-        try (var saida = Files.newBufferedWriter(destino, StandardCharsets.UTF_8)) {
+        gravar(tabela, destino, false);
+    }
+
+    public static boolean salvar(JTable tabela, Path destino, BooleanSupplier confirmarSubstituicao) throws IOException {
+        boolean existe = Files.exists(destino);
+        if (existe && !confirmarSubstituicao.getAsBoolean()) return false;
+        gravar(tabela, destino, existe);
+        return true;
+    }
+
+    private static void gravar(JTable tabela, Path destino, boolean substituir) throws IOException {
+        try (var saida = Files.newBufferedWriter(destino, StandardCharsets.UTF_8,
+                StandardOpenOption.WRITE,
+                substituir ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.CREATE_NEW)) {
             saida.write("\uFEFF"); // marca para o Excel entender os acentos
             for (int linha = -1; linha < tabela.getRowCount(); linha++) {
                 for (int coluna = 0; coluna < tabela.getColumnCount(); coluna++) {

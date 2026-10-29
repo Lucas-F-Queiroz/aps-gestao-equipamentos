@@ -77,6 +77,10 @@ a tela nao travar). O botao "Ver todos" abre Consultas > Situacao dos emprestimo
 - **Consultas:** abas para inventario, situacao dos emprestimos e relatorios.
   - Relatorios: escolha o tipo (Cadastros, Emprestimos, Equipamentos ou Geral), use a busca e os filtros e exporte em
     CSV exatamente o que esta na tela. O tipo Geral e a consulta geral em numeros.
+    Se o arquivo já existir, é preciso confirmar a substituição; cancelar preserva o arquivo anterior.
+
+As operações de banco das telas rodam em segundo plano. Uma janela de espera mantém
+a interface respondendo e impede repetir comandos enquanto a operação termina.
 
 As janelas (`Modal`) e o menu das linhas (`MenuAcoes`) sao classes pequenas e reutilizaveis. Nada disso adiciona
 entidades, tabelas ou regras: as telas continuam chamando os Controllers de sempre.
@@ -129,6 +133,9 @@ O repositório também possui verificações em `src/test/java`. Elas **não sã
 - `APSMigracaoCheck`: primeiro teste do CI em banco vazio; prepara V1/V2, cria um
   cadastro antigo e confirma que a V3 o preserva. Não executar em banco de trabalho.
 - `APSContatoViewCheck`: seleção do cadastro com/sem contato e inclusão dos campos no CSV.
+- `APSExportacaoCheck`: criação de CSV, cancelamento sem alterar o arquivo e substituição confirmada.
+- `APSInterfaceResponsivaCheck`: eventos Swing continuam sendo processados durante a espera;
+  resultados e erros da operação são preservados e a janela de espera é fechada.
 
 O CI também executa os testes DAO, o fluxo transacional, ordenação, filtros e criação
 das telas Swing. Migrations e testes de integração devem ser validados em bancos de teste.

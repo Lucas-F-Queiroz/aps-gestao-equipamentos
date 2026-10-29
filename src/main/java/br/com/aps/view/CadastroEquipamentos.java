@@ -91,13 +91,13 @@ public class CadastroEquipamentos extends JPanel {
 
         // ---------- botoes
         criar.addActionListener(e -> executar(() -> {
-            Aplicacao.equipamentos().cadastrar(patrimonio.getText(), nome.getText(), categoria.getText(),
+            cadastrar(patrimonio.getText(), nome.getText(), categoria.getText(),
                 Regras.codigo((String) estado.getSelectedItem()));
             limpar();
         }));
         salvar.addActionListener(e -> executar(() -> {
             Equipamento atual = exigirSelecao();
-            Aplicacao.equipamentos().atualizar(atual.getId(), patrimonio.getText(), nome.getText(),
+            atualizar(atual.getId(), patrimonio.getText(), nome.getText(),
                 categoria.getText(), Regras.codigo((String) estado.getSelectedItem()));
         }));
         excluirForm.addActionListener(e -> Mensagens.executar(this, this::excluir));
@@ -128,9 +128,10 @@ public class CadastroEquipamentos extends JPanel {
             .info("Patrimônio", e.getPatrimonio()).info("Nome", e.getNome()).componente(abas);
         if (modal.exibir(() -> {
             if (abas.getSelectedIndex() == 0) {
-                Aplicacao.equipamentos().alterarStatus(e.getId(), Regras.codigo((String) novoStatus.getSelectedItem()));
+                String status = Regras.codigo((String) novoStatus.getSelectedItem());
+                TarefaBanco.executar(modal, () -> Aplicacao.equipamentos().alterarStatus(e.getId(), status));
             } else {
-                Aplicacao.equipamentos().atualizar(e.getId(), e.getPatrimonio(), e.getNome(), e.getCategoria(),
+                atualizar(e.getId(), e.getPatrimonio(), e.getNome(), e.getCategoria(),
                     Regras.codigo((String) novoEstado.getSelectedItem()));
             }
         })) {
@@ -167,7 +168,7 @@ public class CadastroEquipamentos extends JPanel {
         Modal modal = new Modal(this, "Editar equipamento")
             .campo("Patrimônio", campoPatrimonio).campo("Nome", campoNome)
             .campo("Categoria", campoCategoria).campo("Estado de conservação", campoEstado);
-        if (modal.exibir(() -> Aplicacao.equipamentos().atualizar(e.getId(), campoPatrimonio.getText(),
+        if (modal.exibir(() -> atualizar(e.getId(), campoPatrimonio.getText(),
                 campoNome.getText(), campoCategoria.getText(),
                 Regras.codigo((String) campoEstado.getSelectedItem())))) {
             carregar();
@@ -179,7 +180,7 @@ public class CadastroEquipamentos extends JPanel {
         Equipamento e = exigirSelecao();
         JTable historico = Estilo.criarTabela(
             new String[]{"Pessoa", "Retirada", "Devolução prevista", "Devolvido em", "Situação"});
-        for (EmprestimoDetalhe d : Aplicacao.emprestimos().listarDetalhado()) {
+        for (EmprestimoDetalhe d : TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado)) {
             Emprestimo m = d.emprestimo();
             if (m.getEquipamentoId() == e.getId()) {
                 Estilo.modelo(historico).addRow(new Object[]{d.usuarioNome(), Estilo.dataHora(m.getDataRetirada()),
@@ -203,13 +204,21 @@ public class CadastroEquipamentos extends JPanel {
     private void excluir() {
         Equipamento e = exigirSelecao();
         if (Mensagens.confirmar(this, "Excluir " + e.getNome() + "?")) {
-            Aplicacao.equipamentos().excluir(e.getId());
+            TarefaBanco.executar(this, () -> Aplicacao.equipamentos().excluir(e.getId()));
             limpar();
             carregar();
         }
     }
 
     // ------------------------------------------------------------ apoio
+
+    private void cadastrar(String patrimonio, String nome, String categoria, String estado) {
+        TarefaBanco.executar(this, () -> Aplicacao.equipamentos().cadastrar(patrimonio, nome, categoria, estado));
+    }
+
+    private void atualizar(int id, String patrimonio, String nome, String categoria, String estado) {
+        TarefaBanco.executar(this, () -> Aplicacao.equipamentos().atualizar(id, patrimonio, nome, categoria, estado));
+    }
 
     private Equipamento exigirSelecao() {
         Equipamento atual = selecionado();
@@ -242,8 +251,9 @@ public class CadastroEquipamentos extends JPanel {
 
     private void carregar() {
         Equipamento anterior = selecionado(); // para manter a mesma linha escolhida depois de recarregar
+        List<Equipamento> atualizadas = TarefaBanco.consultar(this, Aplicacao.equipamentos()::listar);
         linhas.clear();
-        linhas.addAll(Aplicacao.equipamentos().listar());
+        linhas.addAll(atualizadas);
         Estilo.modelo(tabela).setRowCount(0);
         for (Equipamento e : linhas) {
             Estilo.modelo(tabela).addRow(new Object[]{e.getId(), e.getPatrimonio(), e.getNome(),

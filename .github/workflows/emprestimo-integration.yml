@@ -62,5 +62,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Abrir telas Swing em display virtual
         run: xvfb-run -a java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.integracao.APSViewCheck
+      - name: Conferir eventos da interface durante operacao demorada
+        run: timeout 30s xvfb-run -a java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.view.APSInterfaceResponsivaCheck
       - name: Conferir contatos no cadastro e no relatorio
         run: xvfb-run -a java -cp "target/classes:target/test-classes:target/dependency/*" br.com.aps.integracao.APSContatoViewCheck

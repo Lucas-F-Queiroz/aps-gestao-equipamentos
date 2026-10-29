@@ -95,9 +95,12 @@ public class TelaEmprestimos extends JPanel {
             int pessoaEscolhida = comboPessoa.getSelectedIndex() < 0 ? -1
                 : pessoasDaLista.get(comboPessoa.getSelectedIndex()).getId();
 
+            var equipamentos = TarefaBanco.consultar(this, Aplicacao.equipamentos()::listarDisponiveis);
+            var pessoas = TarefaBanco.consultar(this, Aplicacao.usuarios()::listar);
+            var emprestimos = TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado);
             comboEquipamento.removeAllItems();
             equipamentosDaLista.clear();
-            for (Equipamento e : Aplicacao.equipamentos().listarDisponiveis()) { // regra 2
+            for (Equipamento e : equipamentos) { // regra 2
                 equipamentosDaLista.add(e);
                 comboEquipamento.addItem(e.getNome() + " (" + e.getPatrimonio() + ")");
                 if (e.getId() == equipamentoEscolhido) {
@@ -106,7 +109,7 @@ public class TelaEmprestimos extends JPanel {
             }
             comboPessoa.removeAllItems();
             pessoasDaLista.clear();
-            for (Usuario u : Aplicacao.usuarios().listar()) {
+            for (Usuario u : pessoas) {
                 if (u.isAtivo()) { // regra 1
                     pessoasDaLista.add(u);
                     comboPessoa.addItem(u.getNome());
@@ -116,7 +119,7 @@ public class TelaEmprestimos extends JPanel {
                 }
             }
             Estilo.modelo(tabela).setRowCount(0);
-            for (EmprestimoDetalhe d : Aplicacao.emprestimos().listarDetalhado()) { // do mais novo ao mais antigo
+            for (EmprestimoDetalhe d : emprestimos) { // do mais novo ao mais antigo
                 Estilo.modelo(tabela).addRow(new Object[] {d.emprestimo().getId(), d.usuarioNome(),
                     d.equipamentoNome() + " (" + d.equipamentoPatrimonio() + ")",
                     Estilo.dataHora(d.emprestimo().getDataRetirada()), Estilo.dia(d.emprestimo().getDataPrevista()),
@@ -137,8 +140,9 @@ public class TelaEmprestimos extends JPanel {
         }
         try {
             LocalDate prevista = Regras.lerData(campoPrevista.getText(), "a devolução prevista");
-            Aplicacao.emprestimos().emprestar(pessoasDaLista.get(posicaoPessoa).getId(),
-                equipamentosDaLista.get(posicaoEquipamento).getId(), prevista);
+            int pessoaId = pessoasDaLista.get(posicaoPessoa).getId();
+            int equipamentoId = equipamentosDaLista.get(posicaoEquipamento).getId();
+            TarefaBanco.executar(this, () -> Aplicacao.emprestimos().emprestar(pessoaId, equipamentoId, prevista));
             campoPrevista.setText(LocalDate.now().plusDays(7).format(DATA));
             atualizar();
             Mensagens.info(this, "Empréstimo registrado. O equipamento agora está Emprestado.");

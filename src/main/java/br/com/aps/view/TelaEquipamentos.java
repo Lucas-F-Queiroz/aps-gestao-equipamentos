@@ -70,12 +70,14 @@ public class TelaEquipamentos extends JPanel {
 
     private void carregar() {
         try {
+            var emprestimos = TarefaBanco.consultar(this, Aplicacao.emprestimos()::abertos);
+            var equipamentos = TarefaBanco.consultar(this, Aplicacao.equipamentos()::listar);
             Map<Integer, EmprestimoDetalhe> abertos = new HashMap<>();
-            for (EmprestimoDetalhe d : Aplicacao.emprestimos().abertos()) {
+            for (EmprestimoDetalhe d : emprestimos) {
                 abertos.put(d.emprestimo().getEquipamentoId(), d);
             }
             Estilo.modelo(tabela).setRowCount(0);
-            for (Equipamento e : Aplicacao.equipamentos().listar()) {
+            for (Equipamento e : equipamentos) {
                 EmprestimoDetalhe d = abertos.get(e.getId());
                 Estilo.modelo(tabela).addRow(new Object[]{
                     e.getId(), e.getPatrimonio(), e.getNome(), e.getCategoria(),
