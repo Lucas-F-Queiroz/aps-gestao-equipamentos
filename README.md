@@ -1,222 +1,134 @@
-# APS — Gestão de Empréstimos de Equipamentos
+# APS — Gestão de Empréstimos de Equipamentos de TI
 
-Projeto acadêmico da APS 2026/2 desenvolvido em Java.
+Projeto acadêmico em **Java 17**, **Swing/FlatLaf**, **JDBC** e **MySQL**, com arquitetura **MVC + DAO**.
 
-## Tema
+## Como executar pelo Eclipse
 
-Sistema de gestão de empréstimos de equipamentos de TI.
+**Você precisa apenas de:** JDK 17, Eclipse com suporte Maven e MySQL instalado e funcionando. O Eclipse importa as dependências pelo `pom.xml`; não é necessário instalar ferramentas de infraestrutura adicionais.
 
-## Tecnologias
+1. Clone ou baixe esta versão do projeto. Durante a revisão, use a branch da PR; após o merge, use a `main`.
+2. Inicie o serviço do MySQL no computador. Com DBeaver, MySQL Workbench ou outro cliente, execute **uma vez** o arquivo `database/create_database.sql` para criar o banco `aps_equipamentos`.
+3. Em `src/main/resources/`, faça uma cópia de `application.properties.example` e nomeie a cópia como **`application.properties`**. Ajuste `db.user`, `db.password` e a porta de `db.url` conforme a sua instalação do MySQL (a porta padrão é **3306**). **Não envie esse arquivo com senhas para o GitHub.**
+4. No Eclipse: **File → Import → Maven → Existing Maven Projects**. Selecione a pasta do projeto, onde está `pom.xml`. Se necessário, use **Maven → Update Project**.
+5. Em `src/main/java`, abra **`br.com.aps.Aplicacao.java`** e execute **Run As → Java Application**.
 
-- Java 17
-- Maven
-- Swing + FlatLaf
-- JDBC
-- MySQL
-- Flyway
-- Arquitetura MVC + DAO
-- DBeaver como cliente gráfico recomendado para administrar o banco
+Na primeira execução, o **Flyway** cria as tabelas automaticamente. Você só precisa criar o **banco vazio** no passo 2; não execute a migration manualmente. Nas próximas execuções, o banco e seus dados são preservados.
+
+### Se você já tem um banco de uma versão anterior
+
+As migrations **V1 e V2 originais da main foram preservadas**. O Flyway aplica a
+**V3** para acrescentar CPF e celular sem apagar cadastros nem histórico. Pessoas
+anteriores continuam com os dois campos vazios, até que sejam preenchidos pela edição.
+
+Se seu banco veio de um protótipo/arquivo compactado que reescreveu a V1 e removeu
+a V2, ele tem outra linha de migrations. Não execute `repair` nem apague dados para
+esconder o conflito. Use um banco separado para testar e planeje a migração dos dados
+desse protótipo antes de apontar a aplicação para ele.
+
+### Erros frequentes
+
+- **Não existe `Aplicacao.java`**: confira se abriu a versão que contém a interface e atualize os arquivos do projeto.
+- **Arquivo `application.properties` não encontrado**: copie o `.example` na mesma pasta e atualize o projeto no Eclipse.
+- **Erro de conexão ou acesso negado**: verifique o serviço MySQL, porta `3306` e credenciais informadas.
+- **Problemas de Java**: configure o projeto para **JDK 17** e atualize as dependências Maven.
+- **Erro de validation/checksum do Flyway**: o banco veio de outra linha de migrations; preserve seus dados e confira a seção anterior. Bancos com V1/V2 originais recebem a V3 normalmente.
+
+### CPF e celular de pessoas
+
+Os dois campos estão disponíveis no formulário, na edição, na visualização e no
+relatório de cadastros/exportação CSV. Também podem ser encontrados pela busca da tabela.
+
+- **CPF opcional:** aceita com ou sem máscara, valida os dígitos verificadores e
+  rejeita sequências repetidas. Quando preenchido, deve ser único entre pessoas.
+- **Celular opcional:** número brasileiro com DDD e nove dígitos iniciando em 9,
+  por exemplo `(11) 91234-5678`. Pode ser compartilhado por pessoas diferentes.
+- São armazenados como texto, somente com dígitos, preservando zeros iniciais.
+  Campo vazio vira `NULL`; não há dados pessoais inventados para cadastros antigos.
+- Os dados são preservados ao alterar a situação Ativo/Inativo. Para removê-los,
+  limpe os campos pela edição e salve.
+- Use apenas dados fictícios em testes e não publique arquivos exportados com dados reais.
 
 ## Arquitetura
 
 ```text
-View -> Controller -> DAO -> MySQL
-          ^
-          |
-        Model
+View (Swing) → Controller → DAO (JDBC/SQL) → MySQL
+                   ↑            ↑
+                   └── Model ───┘
 ```
 
-Os objetos de `Model` representam as entidades do domínio e são utilizados pelas demais camadas.
+- **Model**: as classes `Usuario`, `Equipamento` e `Emprestimo`.
+- **View**: campos, tabelas, botões e mensagens, sem comandos SQL.
+- **Controller**: validações e coordenação das operações.
+- **DAO**: consultas SQL por JDBC, inserção, atualização, exclusão e transações.
+- **MySQL**: tabelas e integridade dos dados. `Aplicacao.java` executa o Flyway antes de abrir a interface.
 
-## Entidades iniciais
+## Navegacao
 
-- Usuario
-- Equipamento
-- Emprestimo
+A pagina inicial tem a caixa de boas-vindas, tres atalhos (Cadastros, Emprestimos e Consultas) e o
+**Historico ao vivo**: os emprestimos mais recentes, relidos do banco a cada 5 segundos (Timer + SwingWorker, para
+a tela nao travar). O botao "Ver todos" abre Consultas > Situacao dos emprestimos.
 
-## Valores do domínio
+- **Cadastros:** abas para equipamentos e pessoas. Cada linha tem o menu **⋮** (coluna Acoes):
+  - Equipamentos: Alterar status, Alterar estado, Editar dados, Ver historico e Excluir. O status
+    (Disponivel ou Indisponivel) muda na janela "Alterar equipamento"; Emprestado so muda pela devolucao.
+  - Pessoas: Visualizar, Editar, Alterar situacao e Excluir. "Funcao" e o tipo da pessoa (Aluno, Professor ou Funcionario).
+  - O botao "Alterar situacao", ao lado de "Limpar filtros", abre a mesma janela para a linha selecionada.
+- **Emprestimos:** abas para emprestar e registrar devolucao.
+- **Consultas:** abas para inventario, situacao dos emprestimos e relatorios.
+  - Relatorios: escolha o tipo (Cadastros, Emprestimos, Equipamentos ou Geral), use a busca e os filtros e exporte em
+    CSV exatamente o que esta na tela. O tipo Geral e a consulta geral em numeros.
 
-```text
-Usuario.tipo
-- ALUNO
-- PROFESSOR
-- FUNCIONARIO
+As janelas (`Modal`) e o menu das linhas (`MenuAcoes`) sao classes pequenas e reutilizaveis. Nada disso adiciona
+entidades, tabelas ou regras: as telas continuam chamando os Controllers de sempre.
 
-Equipamento.estado
-- NOVO
-- BOM
-- REGULAR
-- DANIFICADO
+### Busca, filtros e ordenacao das tabelas
 
-Equipamento.status
-- DISPONIVEL
-- EMPRESTADO
-- INDISPONIVEL
+Todas as tabelas usam a mesma barra (`FiltroTabela`) e o mesmo ordenador (`ComparadorCelulas`):
 
-Emprestimo.status
-- ABERTO
-- DEVOLVIDO
-```
+- **Pesquisar** procura o texto em todas as colunas, sem diferenciar maiusculas e acentos; com varias palavras,
+  todas precisam aparecer na linha.
+- **Filtros por lista** (categoria, estado, status, pessoa, modelo, situacao...) e **periodo** (data inicial e final
+  do emprestimo) quando a tabela tem datas. "Limpar filtros" volta ao normal.
+- **Ordenar:** clicar no cabecalho da coluna ordena (a setinha indica a direcao) e clicar de novo inverte.
+  Numeros, datas e textos sao comparados cada um do seu jeito. No inventario ha tambem "Ordenar por" e "Ordem".
+- Filtrar e ordenar nao alteram dados. As telas convertem a linha clicada para a posicao real na lista
+  (`Estilo.linhaSelecionada`), por isso editar ou devolver sempre atinge o registro que o usuario escolheu.
 
-`ATRASADO` não é armazenado como status. Um empréstimo é considerado atrasado quando permanece `ABERTO` e a data atual ultrapassa `data_prevista`.
+## Banco e regras principais
 
-## Regras de negócio iniciais
+O banco possui **três tabelas**: `usuario`, `equipamento` e a tabela de relação `emprestimo`. Os vínculos são mantidos pelas chaves estrangeiras `emprestimo.usuario_id` e `emprestimo.equipamento_id`, conforme a orientação do professor.
 
-1. O usuário precisa estar ativo para realizar um empréstimo.
-2. O equipamento precisa estar com status `DISPONIVEL`.
-3. Um equipamento não pode possuir dois empréstimos abertos ao mesmo tempo.
-4. Ao realizar um empréstimo, o equipamento passa para `EMPRESTADO` e o empréstimo fica `ABERTO`.
-5. Ao devolver, o empréstimo passa para `DEVOLVIDO`, `data_devolucao` é preenchida e o equipamento volta para `DISPONIVEL`.
-6. Usuários e equipamentos com histórico de empréstimos não devem ser excluídos fisicamente; as chaves estrangeiras usam `ON DELETE RESTRICT`.
+- Uma pessoa precisa estar **ativa** para realizar um empréstimo.
+- Um equipamento precisa estar **DISPONIVEL**; só pode ter **um empréstimo ABERTO** por vez.
+- Empréstimo e devolução atualizam o equipamento **na mesma transação**.
+- `ATRASADO` é calculado pela data; não é um status salvo no banco.
+- O MySQL impede excluir usuários ou equipamentos com empréstimos históricos (`ON DELETE RESTRICT`).
+- Um equipamento nunca emprestado pode ser excluído. Se já teve empréstimo, mesmo
+  devolvido, mantenha o cadastro e use **Alterar situação > Indisponível** para
+  retirá-lo de circulação. Pessoas com histórico podem ficar Inativas. Abrir ou
+  exportar um relatório não cria o vínculo que impede exclusão.
+- A interface permite cadastrar, consultar, filtrar, ordenar, alterar e excluir registros, respeitando essas regras.
+
+## Testes e requisitos da APS
+
+A [matriz de conformidade](docs/CONFORMIDADE_APS_2026_2.md) relaciona os requisitos da UNIP às funcionalidades do sistema e indica o que ainda precisa ser conferido no relatório acadêmico.
+
+O repositório também possui verificações em `src/test/java`. Elas **não são necessárias para iniciar o programa**: servem para verificar o funcionamento dos DAOs, Controllers, ordenações e janelas Swing. Execute testes de integração somente em um banco de desenvolvimento.
 
 ## Equipe
 
-- Lucas — Model, DAO, JDBC, MySQL e integração
-- Marianna — View, Swing e FlatLaf
-- Davi — Controller, regras e validações
-- Aline — documentação, DER, UML e apoio à apresentação
+- Lucas — Model, DAO, JDBC, MySQL e integração.
+- Marianna — interface Swing e FlatLaf.
+- Davi — Controllers e validações.
+- Aline — documentação e apresentação.
 
-## Como rodar o projeto pela primeira vez
+### Verificações adicionais
 
-1. Instale Java 17, Maven e MySQL.
-2. Use o DBeaver ou outro cliente MySQL para conectar ao servidor local.
-3. Execute o arquivo:
+- `APSPessoaValidacaoCheck`: valida CPF/celular sem banco.
+- `APSPessoasCheck`: gravação, leitura, edição, campos opcionais e CPF único em banco isolado.
+- `APSMigracaoCheck`: primeiro teste do CI em banco vazio; prepara V1/V2, cria um
+  cadastro antigo e confirma que a V3 o preserva. Não executar em banco de trabalho.
+- `APSContatoViewCheck`: seleção do cadastro com/sem contato e inclusão dos campos no CSV.
 
-```text
-database/create_database.sql
-```
-
-4. Copie o modelo e configure as credenciais do seu MySQL local:
-
-```text
-src/main/resources/application.properties.example
-    -> src/main/resources/application.properties
-```
-
-5. No Eclipse, importe o projeto por **File > Import > Maven > Existing Maven Projects**.
-6. Atualize o projeto com **F5** e execute um dos testes manuais listados abaixo por **Run As > Java Application**.
-7. O teste aplicará as migrations pendentes pelo Flyway antes de acessar os DAOs.
-
-A versão atual ainda não possui interface gráfica nem classe principal da aplicação.
-
-## Banco de dados
-
-O projeto usa MySQL. O banco precisa existir antes da primeira execução do Flyway.
-
-O script de bootstrap está em:
-
-```text
-database/create_database.sql
-```
-
-Depois disso, a estrutura das tabelas é versionada pelo Flyway em:
-
-```text
-src/main/resources/db/migration/
-```
-
-A migration inicial é:
-
-```text
-V1__estrutura_inicial.sql
-```
-
-Não edite uma migration que já tenha sido aplicada em um banco compartilhado. Mudanças futuras devem ser novas migrations, por exemplo:
-
-```text
-V2__adiciona_observacao_equipamento.sql
-V3__cria_indice_exemplo.sql
-```
-
-## Configuração local
-
-Credenciais não devem ser versionadas no Git.
-
-A conexão JDBC e o Flyway leem o mesmo arquivo `src/main/resources/application.properties`,
-carregado pelo classpath. Esse arquivo é ignorado pelo Git; apenas o modelo
-`application.properties.example` deve ser versionado.
-
-```text
-db.url=jdbc:mysql://127.0.0.1:3306/aps_equipamentos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
-db.user=aps_local
-db.password=SUA_SENHA_LOCAL
-```
-
-Preencha o usuário e a senha da sua instalação local. As três propriedades são
-obrigatórias; `db.password=` é permitido se o banco usar senha vazia.
-As variáveis `APS_DB_*` não são utilizadas.
-
-No Eclipse, atualize o projeto com **F5** após criar ou editar o arquivo.
-Não compartilhe o `application.properties` nem JARs que contenham suas credenciais.
-
-## Testes locais
-
-Para conferir a compilação, execute na raiz do projeto:
-
-```text
-mvn verify
-```
-
-Os testes atuais são programas Java manuais; esse comando não executa as verificações
-de configuração nem acessa o MySQL. No Eclipse, execute o método `main` destas classes:
-
-| Classe em `src/test/java` | Requisito | Resultado esperado |
-| --- | --- | --- |
-| `br.com.aps.util.DatabaseConfigManualCheck` | Java 17, sem banco | Configuração validada |
-| `br.com.aps.dao.UsuarioDAOManualTest` | MySQL e `application.properties` | Todas as verificações passaram |
-| `br.com.aps.dao.EquipamentoDAOManualCheck` | MySQL e `application.properties` | Verificações concluídas com sucesso |
-| `br.com.aps.dao.EmprestimoDAOManualCheck` | MySQL e `application.properties` | Verificações concluídas com sucesso |
-
-Os testes DAO criam e removem seus registros temporários. Execute-os em um banco de
-desenvolvimento. No GitHub Actions, uma instância MySQL isolada e um arquivo de
-configuração temporário permitem executar os três DAOs sem utilizar credenciais pessoais.
-
-## Flyway
-
-A classe:
-
-```text
-br.com.aps.util.DatabaseMigrator
-```
-
-é responsável por executar as migrations. Quando a classe principal da aplicação for criada, ela deverá chamar:
-
-```java
-DatabaseMigrator.migrate();
-```
-
-antes de abrir a interface gráfica.
-
-## Fluxo de desenvolvimento
-
-Cada tarefa deve ser feita em uma branch própria e enviada por Pull Request antes do merge na `main`.
-
-
-## UsuarioDAO
-
-Arquivo: `src/main/java/br/com/aps/dao/UsuarioDAO.java`.
-
-| Método | Retorno | Comportamento |
-| --- | --- | --- |
-| `inserir(Usuario)` | `void` | Insere e preenche `usuario.id` com o ID gerado |
-| `listar()` | `List<Usuario>` | Lista em ordem de nome, depois ID |
-| `buscarPorId(int)` | `Usuario` | Retorna o registro ou `null` se não existir |
-| `buscarPorNome(String)` | `List<Usuario>` | Pesquisa parcial pelo nome |
-| `atualizar(Usuario)` | `boolean` | `false` se não encontrou o ID |
-| `excluir(int)` | `boolean` | `false` se não encontrou o ID |
-
-Todos os métodos podem lançar `SQLException`. A exclusão física de usuário
-com histórico de empréstimos deve ser bloqueada pelas chaves estrangeiras do MySQL.
-O Controller deverá traduzir esse erro para uma mensagem compreensível.
-
-### Teste manual com MySQL
-
-Depois de criar o banco e configurar a conexão, execute o método `main` da classe:
-
-```text
-src/test/java/br/com/aps/dao/UsuarioDAOManualTest.java
-```
-
-Ela aplica migrations, insere um usuário temporário, valida pesquisas e listagem,
-atualiza, exclui e confere o resultado. Exige MySQL local disponível e não é
-executada automaticamente pelo build Maven.
+O CI também executa os testes DAO, o fluxo transacional, ordenação, filtros e criação
+das telas Swing. Migrations e testes de integração devem ser validados em bancos de teste.
