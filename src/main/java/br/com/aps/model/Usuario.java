@@ -9,6 +9,8 @@ public class Usuario {
     private int id;
     private String nome;
     private String email;
+    private String cpf;
+    private String celular;
     private String tipo;
     private boolean ativo;
 
@@ -53,6 +55,22 @@ public class Usuario {
 
     public String getTipo() {
         return tipo;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public String getCelular() {
+        return celular;
+    }
+
+    public void setCelular(String celular) {
+        this.celular = celular;
     }
 
     public void setTipo(String tipo) {

@@ -52,8 +52,9 @@ public class EquipamentoDAOManualCheck {
 
             equipamento.setNome("Notebook Atualizado");
             equipamento.setEstado(Equipamento.ESTADO_REGULAR);
-            equipamento.setStatus(Equipamento.STATUS_INDISPONIVEL);
             verificar(dao.atualizar(equipamento), "Atualizacao falhou.");
+            verificar(dao.alterarStatusDisponibilidade(equipamento.getId(),
+                    Equipamento.STATUS_INDISPONIVEL), "Alteracao manual de status falhou.");
 
             Equipamento atualizado = dao.buscarPorId(equipamento.getId());
             verificar(atualizado != null, "Equipamento nao encontrado apos UPDATE.");

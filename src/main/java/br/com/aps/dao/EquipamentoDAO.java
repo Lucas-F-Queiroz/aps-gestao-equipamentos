@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Persistencia dos equipamentos. Status operacional e alterado em operacao separada. */
 public class EquipamentoDAO {
 
     private static final String COLUNAS =
@@ -145,7 +146,7 @@ public class EquipamentoDAO {
     public boolean atualizar(Equipamento equipamento) throws SQLException {
         String sql = """
                 UPDATE equipamento
-                SET patrimonio = ?, nome = ?, categoria = ?, estado = ?, status = ?
+                SET patrimonio = ?, nome = ?, categoria = ?, estado = ?
                 WHERE id = ?
                 """;
 
@@ -156,10 +157,36 @@ public class EquipamentoDAO {
             statement.setString(2, equipamento.getNome());
             statement.setString(3, equipamento.getCategoria());
             statement.setString(4, equipamento.getEstado());
-            statement.setString(5, equipamento.getStatus());
-            statement.setInt(6, equipamento.getId());
+            statement.setInt(5, equipamento.getId());
 
             return statement.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Altera somente disponibilidade. O UPDATE e atomico: a mesma linha nao
+     * pode ser emprestada ao mesmo tempo e impedimos alterar status durante
+     * qualquer emprestimo ABERTO. A edicao normal nunca escreve status.
+     */
+    public boolean alterarStatusDisponibilidade(int id, String novoStatus) throws SQLException {
+        if (!Equipamento.STATUS_DISPONIVEL.equals(novoStatus)
+                && !Equipamento.STATUS_INDISPONIVEL.equals(novoStatus)) {
+            throw new IllegalArgumentException("Status manual invalido.");
+        }
+        String sql = """
+                UPDATE equipamento SET status = ?
+                WHERE id = ? AND status IN ('DISPONIVEL', 'INDISPONIVEL')
+                  AND NOT EXISTS (
+                    SELECT 1 FROM emprestimo
+                    WHERE equipamento_id = ? AND status = 'ABERTO'
+                  )
+                """;
+        try (Connection connection = ConnectionFactory.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, novoStatus);
+            statement.setInt(2, id);
+            statement.setInt(3, id);
+            return statement.executeUpdate() == 1;
         }
     }
 

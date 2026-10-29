@@ -18,6 +18,7 @@ e regras de empréstimo pertencem ao Controller, não ao DAO.
 | `buscarPorNome(String)` | `List<Equipamento>` | Busca parcial de nome |
 | `listarPorStatus(String)` | `List<Equipamento>` | Filtra `DISPONIVEL`, `EMPRESTADO`, `INDISPONIVEL` |
 | `atualizar(Equipamento)` | `boolean` | Retorna `false` se ID não existir |
+| `alterarStatusDisponibilidade(int, String)` | `boolean` | Troca DISPONIVEL/INDISPONIVEL somente sem empréstimo aberto |
 | `excluir(int)` | `boolean` | Retorna `false` se ID não existir |
 
 ## Status e estado são coisas diferentes
@@ -34,14 +35,19 @@ ser adaptadas pelo Controller para a interface.
 O MySQL protege o histórico: não é possível excluir equipamento referenciado por
 empréstimo porque a FK usa `ON DELETE RESTRICT`.
 
-O Controller deve impedir alterações manuais incoerentes de status durante empréstimos.
-As operações de emprestar/devolver serão implementadas em uma etapa posterior com transação,
-para atualizar `equipamento` e `emprestimo` de forma atômica.
+`atualizar` altera somente patrimônio, nome, categoria e estado: preserva o status
+operacional atual. A mudança manual de disponibilidade usa um UPDATE condicional,
+que não altera equipamentos emprestados nem aqueles com empréstimo aberto.
+Emprestar e devolver usam as transações do `EmprestimoDAO` para atualizar equipamento
+e empréstimo de forma atômica.
+
+Mesmo após a devolução, o histórico impede exclusão física. Para retirar de circulação,
+use INDISPONIVEL; equipamentos nunca emprestados podem ser excluídos.
 
 ## Teste manual no computador
 
 1. Crie o banco pelo arquivo `database/create_database.sql`.
-2. Configure as variáveis `APS_DB_URL`, `APS_DB_USER` e `APS_DB_PASSWORD`.
+2. Configure `src/main/resources/application.properties` a partir do `.example`.
 3. Execute `EquipamentoDAOManualCheck.main()` pela IDE:
    `src/test/java/br/com/aps/dao/EquipamentoDAOManualCheck.java`.
 
