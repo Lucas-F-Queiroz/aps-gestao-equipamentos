@@ -1,5 +1,3 @@
-> Referência da versão anterior. Para a configuração e o esquema atuais (V1–V4), consulte [README](../README.md). Pessoas usam área/profissão e matrícula; equipamentos incluem modelo, marca e série.
-
 # Protecao da main
 
 Lucas (`@Lucas-F-Queiroz`, ID GitHub `200534446`) decide quais alteracoes entram na `main`.
@@ -21,10 +19,8 @@ foi criada com sucesso e sua aplicacao a `refs/heads/main` foi verificada pela A
 - Unica excecao: usuario `Lucas-F-Queiroz`, somente por Pull Request.
 
 A restricao de atualizacoes impede os demais colaboradores de alterar ou mergear
-na `main`, mesmo antes da integracao deste documento. A exigencia de revisao por
-CODEOWNER usa o arquivo `.github/CODEOWNERS` da branch-base; esse arquivo precisa
-estar integrado na `main` para que Lucas seja solicitado como responsavel por todos
-os arquivos. As permissoes de colaboracao da equipe foram preservadas.
+na `main`. A permissao de merge trata da integracao das mudancas. Os creditos dos
+integrantes do projeto estao no [README](../README.md#equipe).
 
 No GitHub Free, rulesets ficam disponiveis em repositorios publicos. Para usar
 em repositorio privado, e necessario um plano compativel, como GitHub Pro.
@@ -32,8 +28,7 @@ em repositorio privado, e necessario um plano compativel, como GitHub Pro.
 ## O que a regra faz depois de ativada
 
 - Aplica-se somente a `refs/heads/main`.
-- Exige Pull Request e revisao do responsavel definido em `.github/CODEOWNERS`.
-- Define Lucas como responsavel por todos os arquivos, inclusive o proprio `CODEOWNERS`.
+- Exige Pull Request e uma aprovacao de revisao.
 - Descarta aprovacoes anteriores quando chegam novos commits e exige resolver as conversas.
 - Restringe atualizacoes da branch a Lucas: os colegas nao conseguem concluir o merge,
   mesmo que outra pessoa tenha aprovado a PR.
@@ -50,8 +45,7 @@ Como proprietario, Lucas ainda pode editar ou desativar a regra nas configuracoe
 
 ## Reproduzir a configuracao
 
-Esta regra ja foi criada no repositorio e nao deve ser duplicada. Integrar a PR
-desta configuracao para que `.github/CODEOWNERS` tambem esteja na `main`.
+Esta regra ja foi criada no repositorio e nao deve ser duplicada.
 O JSON fica versionado para auditoria e reproducao; a protecao depende da regra
 ativa nas configuracoes do GitHub, nao apenas do arquivo no Git.
 
@@ -102,5 +96,4 @@ A protecao trata principalmente os acessos de escrita ja concedidos a equipe.
 - [Disponibilidade e funcionamento dos rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)
 - [Excecoes somente por Pull Request](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository)
 - [Regras disponiveis](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
-- [CODEOWNERS e aprovacao](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)
 - [API de rulesets](https://docs.github.com/en/rest/repos/rules)
