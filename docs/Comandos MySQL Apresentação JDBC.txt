@@ -9,7 +9,7 @@ db.user=root
 db.password=SUA SENHA DO MYSQL (root)
 
 Salve com CTRL S e apertando com o botão direito em cima de "aps-gestao-equipamentos" de um refresh ou use o F5
- 
+
 
 DENTRO DO WORKBENCH
 Cole esse Texto no Workbench e de o RUN :
@@ -34,4 +34,4 @@ aps-gestao-equipamentos
 	- src/main/java
 	-package de nome br.com.aps
 	-aplicacao.java
-	RUN AS 
+	Run As > Java Application
