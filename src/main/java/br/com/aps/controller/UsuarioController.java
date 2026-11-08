@@ -40,6 +40,10 @@ public class UsuarioController {
     }
 
     public Usuario cadastrar(String nome, String email, String tipo, String matricula) {
+        return cadastrar(nome, email, tipo, matricula, null, null);
+    }
+
+    public Usuario cadastrar(String nome, String email, String tipo, String matricula, String cpf, String celular) {
         String nomeValido = Regras.exigirTexto("nome", nome, Regras.NOME_USUARIO_MAX);
         String emailValido = Regras.exigirEmail(email);
         String tipoValido = Regras.exigirTexto("área/profissão", tipo, 100);
@@ -47,6 +51,8 @@ public class UsuarioController {
 
         Usuario usuario = new Usuario(nomeValido, emailValido, tipoValido);
         usuario.setMatricula(Regras.textoOpcional("matrícula", matricula, 50));
+        usuario.setCpf(Regras.cpf(cpf));
+        usuario.setCelular(Regras.celular(celular));
         try {
             usuarioDAO.inserir(usuario);
         } catch (SQLException erro) {
@@ -63,11 +69,20 @@ public class UsuarioController {
         try {
             Usuario atual = usuarioDAO.buscarPorId(id);
             if (atual == null) throw new RegraNegocioException("Pessoa não encontrada.");
-            atualizar(id, nome, email, tipo, ativo, atual.getMatricula());
+            atualizar(id, nome, email, tipo, ativo, atual.getMatricula(), atual.getCpf(), atual.getCelular());
         } catch (SQLException erro) { throw TradutorErros.traduzir(erro); }
     }
 
     public void atualizar(int id, String nome, String email, String tipo, boolean ativo, String matricula) {
+        try {
+            Usuario atual = usuarioDAO.buscarPorId(id);
+            if (atual == null) throw new RegraNegocioException("Pessoa não encontrada.");
+            atualizar(id, nome, email, tipo, ativo, matricula, atual.getCpf(), atual.getCelular());
+        } catch (SQLException erro) { throw TradutorErros.traduzir(erro); }
+    }
+
+    public void atualizar(int id, String nome, String email, String tipo, boolean ativo, String matricula,
+                          String cpf, String celular) {
         String nomeValido = Regras.exigirTexto("nome", nome, Regras.NOME_USUARIO_MAX);
         String emailValido = Regras.exigirEmail(email);
         String tipoValido = Regras.exigirTexto("área/profissão", tipo, 100);
@@ -75,6 +90,8 @@ public class UsuarioController {
 
         Usuario usuario = new Usuario(id, nomeValido, emailValido, tipoValido, ativo);
         usuario.setMatricula(Regras.textoOpcional("matrícula", matricula, 50));
+        usuario.setCpf(Regras.cpf(cpf));
+        usuario.setCelular(Regras.celular(celular));
         try {
             if (!usuarioDAO.atualizar(usuario)) {
                 throw new RegraNegocioException("Pessoa não encontrada.");

@@ -15,8 +15,8 @@ public class UsuarioDAO {
 
     public void inserir(Usuario usuario) throws SQLException {
         String sql = """
-                INSERT INTO usuario (nome, email, area_profissao, ativo, matricula)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO usuario (nome, email, area_profissao, ativo, matricula, cpf, celular)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = ConnectionFactory.getConnection();
@@ -28,6 +28,8 @@ public class UsuarioDAO {
             statement.setString(3, usuario.getTipo());
             statement.setBoolean(4, usuario.isAtivo());
             statement.setString(5, usuario.getMatricula());
+            statement.setString(6, usuario.getCpf());
+            statement.setString(7, usuario.getCelular());
 
             statement.executeUpdate();
 
@@ -41,7 +43,7 @@ public class UsuarioDAO {
 
     public List<Usuario> listar() throws SQLException {
         String sql = """
-                SELECT id, nome, email, area_profissao, ativo, matricula
+                SELECT id, nome, email, area_profissao, ativo, matricula, cpf, celular
                 FROM usuario
                 ORDER BY nome ASC, id ASC
                 """;
@@ -63,7 +65,7 @@ public class UsuarioDAO {
     // Retorna null se nao existir usuario com o ID informado.
     public Usuario buscarPorId(int id) throws SQLException {
         String sql = """
-                SELECT id, nome, email, area_profissao, ativo, matricula
+                SELECT id, nome, email, area_profissao, ativo, matricula, cpf, celular
                 FROM usuario
                 WHERE id = ?
                 """;
@@ -86,7 +88,7 @@ public class UsuarioDAO {
     // Busca parcial: "ana" encontra "Ana Maria", conforme a collation do banco.
     public List<Usuario> buscarPorNome(String nome) throws SQLException {
         String sql = """
-                SELECT id, nome, email, area_profissao, ativo, matricula
+                SELECT id, nome, email, area_profissao, ativo, matricula, cpf, celular
                 FROM usuario
                 WHERE nome LIKE ?
                 ORDER BY nome ASC, id ASC
@@ -113,7 +115,7 @@ public class UsuarioDAO {
     public boolean atualizar(Usuario usuario) throws SQLException {
         String sql = """
                 UPDATE usuario
-                SET nome = ?, email = ?, area_profissao = ?, ativo = ?, matricula = ?
+                SET nome = ?, email = ?, area_profissao = ?, ativo = ?, matricula = ?, cpf = ?, celular = ?
                 WHERE id = ?
                 """;
 
@@ -125,7 +127,9 @@ public class UsuarioDAO {
             statement.setString(3, usuario.getTipo());
             statement.setBoolean(4, usuario.isAtivo());
             statement.setString(5, usuario.getMatricula());
-            statement.setInt(6, usuario.getId());
+            statement.setString(6, usuario.getCpf());
+            statement.setString(7, usuario.getCelular());
+            statement.setInt(8, usuario.getId());
 
             return statement.executeUpdate() > 0;
         }
@@ -154,6 +158,8 @@ public class UsuarioDAO {
                 resultSet.getBoolean("ativo")
         );
         usuario.setMatricula(resultSet.getString("matricula"));
+        usuario.setCpf(resultSet.getString("cpf"));
+        usuario.setCelular(resultSet.getString("celular"));
         return usuario;
     }
 }

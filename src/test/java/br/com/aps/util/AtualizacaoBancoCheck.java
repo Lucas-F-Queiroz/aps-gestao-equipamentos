@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.nio.file.*;
 import javax.swing.*;
 
-/** Teste destrutivo apenas para banco ISOLADO vazio aps_teste_correcao na porta 33317. */
+/** Teste apenas para bancos vazios e isolados na porta 33317. */
 public class AtualizacaoBancoCheck {
     static void check(boolean ok, String texto) {
         if (!ok) throw new AssertionError(texto);
@@ -25,30 +25,46 @@ public class AtualizacaoBancoCheck {
     }
     public static void main(String[] args) throws Exception {
         var config = DatabaseConfig.load();
-        if (!config.url().startsWith("jdbc:mysql://127.0.0.1:33317/aps_teste_correcao?"))
+        boolean mainAnterior = args.length == 1 && "--main-anterior".equals(args[0]);
+        String banco = mainAnterior ? "aps_teste_main_anterior" : "aps_teste_correcao";
+        if (!config.url().startsWith("jdbc:mysql://127.0.0.1:33317/" + banco + "?"))
             throw new IllegalStateException("Use exclusivamente o banco isolado de teste.");
+        String historico = mainAnterior ? "classpath:db/migration-main" : "classpath:db/migration";
         var original = Flyway.configure().dataSource(config.url(), config.user(), config.password())
-            .locations("classpath:db/migration").target("3").load();
+            .locations("classpath:db/migration-common", historico).target("3").load();
         original.migrate();
         try (var c = ConnectionFactory.getConnection(); var st = c.createStatement()) {
-            st.executeUpdate("INSERT INTO usuario(nome,email,area_profissao,matricula) VALUES ('Pessoa antiga','antiga@teste.com','Engenharia','ANTIGA')");
-            st.executeUpdate("INSERT INTO equipamento(patrimonio,nome,categoria,estado,modelo,marca,numero_serie) VALUES ('ANTIGO','Notebook antigo','Notebook','BOM','Modelo antigo','Marca antiga','SERIE-ANTIGA')");
+            if (mainAnterior) {
+                st.executeUpdate("INSERT INTO usuario(nome,email,tipo,cpf,celular) VALUES ('Pessoa antiga','antiga@teste.com','ALUNO','52998224725','11912345678')");
+                st.executeUpdate("INSERT INTO equipamento(patrimonio,nome,categoria,estado) VALUES ('ANTIGO','Notebook antigo','Notebook','BOM')");
+            } else {
+                st.executeUpdate("INSERT INTO usuario(nome,email,area_profissao,matricula) VALUES ('Pessoa antiga','antiga@teste.com','Engenharia','ANTIGA')");
+                st.executeUpdate("INSERT INTO equipamento(patrimonio,nome,categoria,estado,modelo,marca,numero_serie) VALUES ('ANTIGO','Notebook antigo','Notebook','BOM','Modelo antigo','Marca antiga','SERIE-ANTIGA')");
+            }
             st.executeUpdate("INSERT INTO emprestimo(usuario_id,equipamento_id,data_retirada,data_prevista,data_devolucao,status) VALUES (1,1,'2026-01-01','2026-01-03','2026-01-02','DEVOLVIDO')");
         }
         DatabaseMigrator.migrate();
         DatabaseMigrator.migrate();
         try (var c = ConnectionFactory.getConnection(); var st = c.createStatement();
-             var rs = st.executeQuery("SELECT checksum FROM flyway_schema_history WHERE version='3'")) {
-            check(rs.next() && rs.getInt(1) == 1634580469, "V3 original preservada; V4 aplicada e reinicialização válida");
+             var rs = st.executeQuery("SELECT script, checksum FROM flyway_schema_history WHERE version='3'")) {
+            check(rs.next() && (mainAnterior ? "V3__cpf_celular_usuario.sql".equals(rs.getString(1))
+                : rs.getInt(2) == 1634580469), "V3 original preservada e reinicialização válida");
         }
         var ud = new UsuarioDAO(); var ed = new EquipamentoDAO();
-        check("Engenharia".equals(ud.buscarPorId(1).getAreaProfissao()), "Pessoa antiga preservada");
-        check("SERIE-ANTIGA".equals(ed.buscarPorId(1).getNumeroSerie()), "Equipamento antigo preservado");
+        check((mainAnterior ? "Aluno" : "Engenharia").equals(ud.buscarPorId(1).getAreaProfissao()), "Pessoa antiga preservada");
+        check((mainAnterior ? "SEM-SERIE-1" : "SERIE-ANTIGA").equals(ed.buscarPorId(1).getNumeroSerie()), "Equipamento antigo preservado");
+        if (mainAnterior) {
+            check("52998224725".equals(ud.buscarPorId(1).getCpf()) && "11912345678".equals(ud.buscarPorId(1).getCelular()),
+                "CPF e celular da main preservados");
+        }
         var usuarios = new UsuarioController(); var equipamentos = new EquipamentoController();
         var emprestimos = new EmprestimoController();
-        var u = usuarios.cadastrar("Pessoa nova", "nova@teste.com", "Analista de TI", "NOVA");
+        var u = usuarios.cadastrar("Pessoa nova", "nova@teste.com", "Analista de TI", "NOVA", "111.444.777-35", "(19) 91234-5678");
         usuarios.atualizar(u.getId(), "Pessoa editada", u.getEmail(), "Suporte técnico", true, "NOVA-2");
         check("NOVA-2".equals(ud.buscarPorId(u.getId()).getMatricula()), "Cadastro e edição de matrícula");
+        check("11144477735".equals(ud.buscarPorId(u.getId()).getCpf())
+            && "19912345678".equals(ud.buscarPorId(u.getId()).getCelular()), "CPF e celular normalizados e preservados na edição");
+        recusa(() -> usuarios.cadastrar("Duplicada", "cpf@teste.com", "Área", null, "11144477735", null));
         recusa(() -> usuarios.cadastrar("Duplicada", "outra@teste.com", "Área", "NOVA-2"));
         var e = equipamentos.cadastrar("NOVO", "Notebook novo", "Notebook", "Bom", "Latitude", "Dell", "SN-NOVO", "Windows", "TI");
         equipamentos.atualizar(e.getId(), "NOVO", "Notebook editado", "Notebook", "Bom", "Latitude 2", "Dell", "SN-NOVO", "Linux", "Suporte");

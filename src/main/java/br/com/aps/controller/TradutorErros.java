@@ -45,6 +45,7 @@ public final class TradutorErros {
 
     // O MySQL diz qual indice foi violado; assim a mensagem aponta o campo certo.
     private static String mensagemDeRepetido(String texto) {
+        if (texto.contains("uq_usuario_cpf")) return "Já existe uma pessoa com esse CPF.";
         if (texto.contains("uq_emprestimo_equipamento_aberto")) {
             return "Este equipamento já possui um empréstimo aberto.";
         }

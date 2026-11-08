@@ -28,6 +28,8 @@ public class CadastroPessoas extends JPanel {
     private final JTextField campoEmail = new JTextField();
     private final JTextField campoTipo = new JTextField();
     private final JTextField campoMatricula = new JTextField();
+    private final JTextField campoCpf = new JTextField();
+    private final JTextField campoCelular = new JTextField();
     private final JComboBox<String> campoStatus = new JComboBox<>(new String[] {"Ativo", "Inativo"});
     private final JTable tabela = Estilo.criarTabela(
         new String[] {"ID", "Nome", "E-mail", "Área/profissão", "Status", "Equipamento em uso", "Matrícula"});
@@ -45,13 +47,15 @@ public class CadastroPessoas extends JPanel {
         ((BorderLayout) cartaoForm.getLayout()).setVgap(8);
         cartaoForm.add(Estilo.subtitulo("Dados da pessoa"), BorderLayout.NORTH);
 
-        JPanel campos = new JPanel(new GridLayout(2, 3, 16, 8));
+        JPanel campos = new JPanel(new GridLayout(0, 4, 16, 8));
         campos.setOpaque(false);
         campos.add(Estilo.campo("Nome", campoNome));
         campos.add(Estilo.campo("E-mail (único)", campoEmail));
         campos.add(Estilo.campo("Área/profissão", campoTipo));
         campos.add(Estilo.campo("Status", campoStatus));
         campos.add(Estilo.campo("Matrícula (opcional, única)", campoMatricula));
+        campos.add(Estilo.campo("CPF (opcional, único)", campoCpf));
+        campos.add(Estilo.campo("Celular (opcional)", campoCelular));
 
         JButton cadastrar = Estilo.botaoPrincipal("Cadastrar");
         JButton modificar = Estilo.botao("Modificar");
@@ -127,6 +131,8 @@ public class CadastroPessoas extends JPanel {
         campoEmail.setText(u.getEmail());
         campoTipo.setText(u.getAreaProfissao());
         campoMatricula.setText(u.getMatricula());
+        campoCpf.setText(u.getCpf());
+        campoCelular.setText(u.getCelular());
         campoStatus.setSelectedItem(u.isAtivo() ? "Ativo" : "Inativo");
         campoStatus.setEnabled(true);
     }
@@ -134,7 +140,7 @@ public class CadastroPessoas extends JPanel {
     private void cadastrar() {
         try {
             Aplicacao.usuarios().cadastrar(campoNome.getText(), campoEmail.getText(),
-                campoTipo.getText(), campoMatricula.getText());
+                campoTipo.getText(), campoMatricula.getText(), campoCpf.getText(), campoCelular.getText());
             atualizarTabela();
             limpar();
             Mensagens.info(this, "Pessoa cadastrada.");
@@ -152,7 +158,7 @@ public class CadastroPessoas extends JPanel {
         try {
             boolean ativo = campoStatus.getSelectedItem().equals("Ativo");
             Aplicacao.usuarios().atualizar(u.getId(), campoNome.getText(), campoEmail.getText(),
-                campoTipo.getText(), ativo, campoMatricula.getText());
+                campoTipo.getText(), ativo, campoMatricula.getText(), campoCpf.getText(), campoCelular.getText());
             atualizarTabela();
 
             String mensagem = "Pessoa atualizada.";
@@ -190,6 +196,8 @@ public class CadastroPessoas extends JPanel {
         campoEmail.setText("");
         campoTipo.setText("");
         campoMatricula.setText("");
+        campoCpf.setText("");
+        campoCelular.setText("");
         campoStatus.setSelectedIndex(0);
         campoStatus.setEnabled(false);
         tabela.clearSelection();

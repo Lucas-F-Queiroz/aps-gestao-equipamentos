@@ -11,6 +11,8 @@ public class Usuario {
     private String email;
     private String tipo; // Alias legado para area_profissao, texto livre
     private String matricula;
+    private String cpf;
+    private String celular;
     private boolean ativo;
 
     public Usuario() {
@@ -65,6 +67,11 @@ public class Usuario {
     public void setAreaProfissao(String valor) { tipo = valor; }
     public String getMatricula() { return matricula; }
     public void setMatricula(String valor) { matricula = valor; }
+
+    public String getCpf() { return cpf; }
+    public void setCpf(String valor) { cpf = valor; }
+    public String getCelular() { return celular; }
+    public void setCelular(String valor) { celular = valor; }
 
     public boolean isAtivo() {
         return ativo;

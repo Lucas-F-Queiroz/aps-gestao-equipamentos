@@ -131,4 +131,36 @@ public final class Regras {
             throw new RegraNegocioException("Informe " + campo + " no formato dd/mm/aaaa.");
         }
     }
+
+    /** CPF opcional, sem mascara e com digitos verificadores validos. */
+    public static String cpf(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        String cpf = valor.replaceAll("[.\\s-]", "");
+        if (!cpf.matches("[0-9]{11}") || cpf.chars().distinct().count() == 1) {
+            throw new RegraNegocioException("Informe um CPF válido com 11 dígitos.");
+        }
+        for (int posicao = 9; posicao <= 10; posicao++) {
+            int soma = 0;
+            for (int i = 0; i < posicao; i++) {
+                soma += (cpf.charAt(i) - '0') * (posicao + 1 - i);
+            }
+            int digito = (soma * 10) % 11;
+            if (digito == 10) digito = 0;
+            if (digito != cpf.charAt(posicao) - '0') {
+                throw new RegraNegocioException("Os dígitos verificadores do CPF são inválidos.");
+            }
+        }
+        return cpf;
+    }
+
+    /** Celular brasileiro opcional: DDD + nove digitos, iniciando em 9. */
+    public static String celular(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        String celular = valor.replaceAll("[()\\s-]", "");
+        if (!celular.matches("[1-9][0-9]9[0-9]{8}")) {
+            throw new RegraNegocioException("Informe o celular com DDD e 9 dígitos, por exemplo (11) 91234-5678.");
+        }
+        return celular;
+    }
+
 }

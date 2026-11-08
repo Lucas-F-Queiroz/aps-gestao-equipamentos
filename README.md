@@ -24,7 +24,9 @@ Use o banco existente. Somente numa instalação nova, crie o banco usando datab
 
 ## Banco e relatórios
 
-O Flyway aplica as migrações pendentes ao abrir o aplicativo. V1 a V4 foram preservadas em relação ao pacote corrigido anterior; V3 é a versão original com checksum 1634580469. V4 cria o registro do estado/descrição da devolução. V5 adiciona registrado_por em devolucao, sem apagar registros. Não edite o histórico Flyway ou execute repair para esconder diferenças.
+O Flyway aplica as migrações pendentes ao abrir o aplicativo. V1, V2, V4 e V5 são comuns às duas linhas de atualização. O aplicativo identifica pelo histórico qual V3 já foi aplicada. Na V6 original, a V3 acrescentou matrícula e campos do equipamento, e a nova migração V6 acrescenta CPF e celular. Na main anterior, a V3 acrescentou CPF e celular, e a nova migração V6 acrescenta matrícula e os campos do equipamento. Os dois caminhos preservam os cadastros e convergem para o mesmo esquema. Uma instalação nova segue o caminho da V6 original.
+
+CPF e celular são opcionais no cadastro. O CPF é único e tem os dígitos verificadores validados. O celular usa DDD e nove dígitos. V4 cria o detalhe da devolução e V5 registra o nome do responsável informado pelo operador.
 
 O campo Responsável pelo registro deve ser preenchido pelo operador na tela Devolução. A identidade fixa `Davi | Administrador` foi removida, pois o projeto ainda não possui autenticação. Registros antigos permanecem sem autor e são exibidos como Não informado.
 
