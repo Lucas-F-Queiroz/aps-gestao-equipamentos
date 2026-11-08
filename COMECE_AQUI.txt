@@ -7,6 +7,6 @@ Leia README.md para as alterações e o passo a passo.
 3. Maven > Update Project e Project > Clean.
 4. Execute br.com.aps.Aplicacao.
 
-Mantenha seu banco atual. O Flyway aplica as migrações pendentes até V5 automaticamente.
-V5 acrescenta o responsável pelo relatório de devolução.
+Mantenha seu banco atual. O Flyway aplica as migrações pendentes até V6 automaticamente.
+A V6 preserva os cadastros dos dois históricos de migração descritos no README.
 Relatórios são salvos no MySQL e exportados em CSV pelos botões de download.
