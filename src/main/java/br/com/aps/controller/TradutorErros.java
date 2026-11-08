@@ -24,8 +24,7 @@ public final class TradutorErros {
                 return new RegraNegocioException(mensagemDeRepetido(texto), erro);
             case 1451: // chave estrangeira ON DELETE RESTRICT
                 return new RegraNegocioException(
-                    "Não é possível excluir: existe histórico de empréstimos, mesmo após a devolução. "
-                    + "Preserve o histórico: marque o equipamento como Indisponível ou a pessoa como Inativa.", erro);
+                    "Não é possível excluir: existe histórico de empréstimos.", erro);
             case 3819: // CHECK violado
                 return new RegraNegocioException(
                     "Os dados informados violam uma regra do banco de dados.", erro);
@@ -38,7 +37,7 @@ public final class TradutorErros {
 
         if (estado.startsWith("08")) {
             return new RegraNegocioException(
-                "Não foi possível conectar ao MySQL. Verifique se o banco está iniciado e a configuração de conexão.",
+                "Não foi possível conectar ao banco. Verifique se o MySQL está ligado e o application.properties.",
                 erro);
         }
         return new RegraNegocioException("Erro ao acessar o banco de dados.", erro);

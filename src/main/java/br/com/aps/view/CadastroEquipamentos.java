@@ -1,277 +1,252 @@
 package br.com.aps.view;
 
 import br.com.aps.Aplicacao;
-import br.com.aps.controller.RegraNegocioException;
 import br.com.aps.controller.Regras;
-import br.com.aps.model.Emprestimo;
-import br.com.aps.model.EmprestimoDetalhe;
 import br.com.aps.model.Equipamento;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.ArrayList;
-import java.util.List;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 
 /**
- * Cadastro de equipamentos. Em cima, o formulario; embaixo, a lista com busca, filtros e o menu "⋮"
- * de cada linha (Alterar status, Alterar estado, Editar dados, Ver historico, Excluir).
- * O status (Disponivel ou Indisponivel) muda na janela "Alterar equipamento"; Emprestado so muda
- * pela devolucao (o Controller recusa). Equipamento novo sempre nasce Disponivel.
+ * Cadastro de equipamentos (tabela "equipamento" do Lucas): patrimonio, nome, categoria e estado.
+ * O status (Disponivel / Emprestado / Indisponivel) NAO e digitado aqui: equipamento novo nasce
+ * Disponivel e depois muda pelo emprestimo, pela devolucao e pela tela Equipamentos.
  */
 public class CadastroEquipamentos extends JPanel {
-    private static final String[] OPCOES_STATUS = {"Disponível", "Indisponível"};
-
-    private final JTextField patrimonio = new JTextField();
-    private final JTextField nome = new JTextField();
-    private final JTextField categoria = new JTextField();
-    private final JComboBox<String> estado = new JComboBox<>(Regras.rotulos(Regras.ESTADOS));
+    private final JTextField campoModelo = new JTextField();
+    private final JTextField campoMarca = new JTextField();
+    private final JTextField campoNumeroSerie = new JTextField();
+    private final JTextField campoSistemaOperacional = new JTextField();
+    private final JTextField campoDepartamento = new JTextField();
+    private final JTextField campoPatrimonio = new JTextField();
+    private final JTextField campoNome = new JTextField();
+    private final JTextField campoCategoria = new JTextField();
+    private final JComboBox<String> campoEstado = new JComboBox<>(Regras.rotulos(Regras.ESTADOS));
     private final JTable tabela = Estilo.criarTabela(
-        new String[]{"ID", "Patrimônio", "Nome", "Categoria", "Estado", "Status", "Ações"});
-    private final List<Equipamento> linhas = new ArrayList<>();
-    private final FiltroTabela filtro = new FiltroTabela(tabela);
+        new String[] {"ID", "Nome", "Categoria", "Marca", "Modelo", "Estado", "Status", "Sistema operacional", "Número de série", "Departamento", "Ações"});
+    private final ArrayList<Equipamento> equipamentos = new ArrayList<>(); // mesma ordem das linhas da tabela
 
-    public CadastroEquipamentos() {
-        super(new BorderLayout(0, 14));
+    private final JTextField busca = new JTextField();
+    private final JComboBox<String> categoriaFiltro = new JComboBox<>();
+    private final javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> ordenador = new javax.swing.table.TableRowSorter<>(Estilo.modelo(tabela));
+    public CadastroEquipamentos() { this(false); }
+    public CadastroEquipamentos(boolean paginaEquipamentos) {
+        super(new BorderLayout(0, 12));
         setOpaque(false);
 
-        patrimonio.putClientProperty("JTextField.placeholderText", "Ex.: PAT-007");
-        nome.putClientProperty("JTextField.placeholderText", "Ex.: Notebook Dell Latitude");
-        categoria.putClientProperty("JTextField.placeholderText", "Ex.: Notebook");
+        campoPatrimonio.putClientProperty("JTextField.placeholderText", "Ex.: EQUIP-001");
+        campoNome.putClientProperty("JTextField.placeholderText", "Ex.: Notebook Dell Latitude");
+        campoCategoria.putClientProperty("JTextField.placeholderText", "Ex.: Notebook");
 
-        // ---------- formulario
-        JPanel cadastro = Estilo.cartao();
-        cadastro.add(Estilo.subtitulo("Cadastro de equipamentos"), BorderLayout.NORTH);
-        JPanel campos = new JPanel(new GridLayout(1, 4, 12, 0)); // 1 linha, 4 colunas
+        campoModelo.putClientProperty("JTextField.placeholderText", "Ex.: Latitude 3520");
+        campoMarca.putClientProperty("JTextField.placeholderText", "Ex.: Dell");
+        campoNumeroSerie.putClientProperty("JTextField.placeholderText", "Ex.: ABC123456");
+        campoSistemaOperacional.putClientProperty("JTextField.placeholderText", "Ex.: Windows 11");
+        campoDepartamento.putClientProperty("JTextField.placeholderText", "Ex.: TI");
+        JPanel cartaoForm = Estilo.cartao();
+        cartaoForm.setBorder(javax.swing.BorderFactory.createEmptyBorder(9, 16, 9, 16));
+        ((BorderLayout) cartaoForm.getLayout()).setVgap(8);
+        cartaoForm.add(Estilo.subtitulo("Dados do equipamento"), BorderLayout.NORTH);
+
+        JPanel campos = new JPanel(new GridLayout(paginaEquipamentos ? 2 : 3, paginaEquipamentos ? 5 : 3, 12, 6));
         campos.setOpaque(false);
-        campos.add(Estilo.campo("Patrimônio", patrimonio));
-        campos.add(Estilo.campo("Nome", nome));
-        campos.add(Estilo.campo("Categoria", categoria));
-        campos.add(Estilo.campo("Estado de conservação", estado));
-        cadastro.add(campos, BorderLayout.CENTER);
+        campos.add(Estilo.campo("ID (patrimônio único)", campoPatrimonio));
+        campos.add(Estilo.campo("Nome", campoNome));
+        campos.add(Estilo.campo("Categoria", campoCategoria));
+        campos.add(Estilo.campo("Estado", campoEstado));
+        campos.add(Estilo.campo("Modelo", campoModelo));
+        campos.add(Estilo.campo("Marca", campoMarca));
+        campos.add(Estilo.campo("Número de série (único)", campoNumeroSerie));
+        campos.add(Estilo.campo("Sistema operacional", campoSistemaOperacional));
+        campos.add(Estilo.campo("Departamento", campoDepartamento));
 
-        JButton criar = Estilo.botaoPrincipal("Cadastrar");
-        JButton salvar = Estilo.botao("Salvar alterações");
-        JButton excluirForm = Estilo.botao("Excluir");
+
+        JButton cadastrar = Estilo.botaoPrincipal("Cadastrar");
+        JButton modificar = Estilo.botao("Modificar");
+        JButton excluir = Estilo.botao("Excluir");
         JButton limpar = Estilo.botao("Limpar");
-        cadastro.add(Estilo.linhaBotoes(criar, salvar, excluirForm, limpar), BorderLayout.SOUTH);
-        add(cadastro, BorderLayout.NORTH);
 
-        // ---------- lista: busca, filtros, botao "Alterar situacao" e menu "⋮"
-        JButton alterarSituacao = Estilo.botaoPrincipal("Alterar situação");
-        filtro.adicionarFiltro("Categoria", 3).adicionarFiltro("Estado", 4).adicionarFiltro("Status", 5)
-            .adicionarBotao(alterarSituacao);
-        Estilo.larguras(tabela, 50, 120, 300, 140, 120, 130, 70);
-        Estilo.colorirSituacao(tabela, 4);
-        Estilo.colorirSituacao(tabela, 5);
-        JPopupMenu menu = MenuAcoes.instalar(tabela, 6);
-        menu.add(MenuAcoes.item("Alterar status", "trocar", Estilo.BARRA_LATERAL, () -> alterar(0)));
-        menu.add(MenuAcoes.item("Alterar estado", "trocar", Estilo.BARRA_LATERAL, () -> alterar(1)));
-        menu.add(MenuAcoes.item("Editar dados", "editar", Estilo.BARRA_LATERAL, this::editarDados));
-        menu.add(MenuAcoes.item("Ver histórico", "relogio", Estilo.BARRA_LATERAL, this::verHistorico));
-        menu.add(MenuAcoes.item("Excluir", "excluir", Estilo.VERMELHO, this::excluir));
-        JPanel listagem = Estilo.cartao();
-        listagem.add(filtro, BorderLayout.NORTH);
-        listagem.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
-        listagem.add(new JLabel("Excluir: somente equipamentos nunca emprestados. Com histórico, use Alterar situação → Indisponível."),
-            BorderLayout.SOUTH);
-        add(listagem, BorderLayout.CENTER);
+        cadastrar.setIcon(new IconeAcao("mais", java.awt.Color.WHITE));
+        modificar.setIcon(new IconeAcao("editar", Estilo.BARRA_LATERAL));
+        excluir.setIcon(new IconeAcao("excluir", Estilo.BARRA_LATERAL));
+        limpar.setIcon(new IconeAcao("limpar", Estilo.BARRA_LATERAL));
+        JLabel dica = new JLabel("Equipamento novo nasce Disponível. Quem tem histórico de empréstimos não pode ser excluído.");
+        dica.setForeground(Estilo.TEXTO_SUAVE);
+        dica.setFont(dica.getFont().deriveFont(12f));
+        for (JButton acao : new JButton[] {cadastrar, modificar, excluir, limpar}) {
+            acao.putClientProperty("FlatLaf.style", (String) acao.getClientProperty("FlatLaf.style") + "; margin: 5,16,5,16");
+        }
 
-        // ---------- botoes
-        criar.addActionListener(e -> executar(() -> {
-            cadastrar(patrimonio.getText(), nome.getText(), categoria.getText(),
-                Regras.codigo((String) estado.getSelectedItem()));
-            limpar();
-        }));
-        salvar.addActionListener(e -> executar(() -> {
-            Equipamento atual = exigirSelecao();
-            atualizar(atual.getId(), patrimonio.getText(), nome.getText(),
-                categoria.getText(), Regras.codigo((String) estado.getSelectedItem()));
-        }));
-        excluirForm.addActionListener(e -> Mensagens.executar(this, this::excluir));
-        limpar.addActionListener(e -> limpar());
-        alterarSituacao.addActionListener(e -> Mensagens.executar(this, () -> alterar(0)));
-        tabela.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) preencher();
+        JPanel miolo = new JPanel(new BorderLayout(0, 8));
+        miolo.setOpaque(false);
+        miolo.add(campos, BorderLayout.NORTH);
+        miolo.add(Estilo.linhaBotoes(cadastrar, modificar, excluir, limpar), BorderLayout.CENTER);
+        miolo.add(dica, BorderLayout.SOUTH);
+        cartaoForm.add(miolo, BorderLayout.CENTER);
+        add(cartaoForm, BorderLayout.NORTH);
+
+        JPanel cartaoTabela = Estilo.cartao();
+        JPanel topoLista = new JPanel(new BorderLayout(0,10));topoLista.setOpaque(false);
+        topoLista.add(Estilo.subtitulo("Equipamentos cadastrados"),BorderLayout.NORTH);
+        busca.putClientProperty("JTextField.placeholderText","Digite para filtrar a tabela");
+        busca.putClientProperty("JTextField.leadingIcon",new IconeAcao("busca",Estilo.TEXTO_SUAVE));
+        JButton pesquisar=Estilo.botaoPrincipal("Pesquisar");
+        JPanel filtros=new JPanel(new BorderLayout(14,0));filtros.setOpaque(false);
+        JPanel camposBusca=new JPanel(new GridLayout(1,2,14,0));camposBusca.setOpaque(false);
+        camposBusca.add(Estilo.campo("Buscar",busca));camposBusca.add(Estilo.campo("Categoria",categoriaFiltro));
+        filtros.add(camposBusca,BorderLayout.CENTER);filtros.add(Estilo.campo(" ",pesquisar),BorderLayout.EAST);
+        topoLista.add(filtros,BorderLayout.CENTER);cartaoTabela.add(topoLista,BorderLayout.NORTH);
+        tabela.setRowSorter(ordenador);
+        pesquisar.addActionListener(e->filtrar());busca.addActionListener(e->filtrar());categoriaFiltro.addActionListener(e->filtrar());
+        busca.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
+            public void insertUpdate(javax.swing.event.DocumentEvent e){filtrar();}public void removeUpdate(javax.swing.event.DocumentEvent e){filtrar();}public void changedUpdate(javax.swing.event.DocumentEvent e){filtrar();}
         });
-        carregar();
+        Estilo.colorirSituacao(tabela, 5);Estilo.colorirSituacao(tabela, 6);
+        new AcaoTabela(tabela,10,"editar","Editar / alterar disponibilidade",i->acoes(i));
+        Estilo.larguras(tabela,110,180,90,85,100,100,110,110,120,100,70);
+        cartaoTabela.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
+        add(cartaoTabela, BorderLayout.CENTER);
+
+        cadastrar.addActionListener(e -> cadastrar());
+        modificar.addActionListener(e -> modificar());
+        excluir.addActionListener(e -> excluir());
+        limpar.addActionListener(e -> limpar());
+        tabela.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                preencherFormulario();
+            }
+        });
+
+        atualizarTabela();
     }
 
-    // ------------------------------------------------------------ janelas (modais) do menu "⋮"
-
-    /** Alterar equipamento: duas abas, Status (disponivel/indisponivel) e Estado (conservacao). */
-    private void alterar(int abaInicial) {
-        Equipamento e = exigirSelecao();
-        JComboBox<String> novoStatus = new JComboBox<>(OPCOES_STATUS);
-        novoStatus.setSelectedItem(Equipamento.STATUS_DISPONIVEL.equals(e.getStatus()) ? "Indisponível" : "Disponível");
-        JComboBox<String> novoEstado = new JComboBox<>(Regras.rotulos(Regras.ESTADOS));
-        novoEstado.setSelectedItem(Regras.rotulo(e.getEstado()));
-
-        JTabbedPane abas = new JTabbedPane();
-        abas.addTab("Status", montarAba("Status atual", Regras.rotulo(e.getStatus()), "Novo status", novoStatus));
-        abas.addTab("Estado", montarAba("Estado atual", Regras.rotulo(e.getEstado()), "Novo estado", novoEstado));
-        abas.setSelectedIndex(abaInicial);
-
-        Modal modal = new Modal(this, "Alterar equipamento")
-            .info("Patrimônio", e.getPatrimonio()).info("Nome", e.getNome()).componente(abas);
-        if (modal.exibir(() -> {
-            if (abas.getSelectedIndex() == 0) {
-                String status = Regras.codigo((String) novoStatus.getSelectedItem());
-                TarefaBanco.executar(modal, () -> Aplicacao.equipamentos().alterarStatus(e.getId(), status));
-            } else {
-                atualizar(e.getId(), e.getPatrimonio(), e.getNome(), e.getCategoria(),
-                    Regras.codigo((String) novoEstado.getSelectedItem()));
+    private void atualizarTabela() {
+        try {
+            equipamentos.clear();
+            equipamentos.addAll(Aplicacao.equipamentos().listar());
+            Estilo.modelo(tabela).setRowCount(0);
+            Object anterior = categoriaFiltro.getSelectedItem();
+            categoriaFiltro.removeAllItems();categoriaFiltro.addItem("Todos");
+            equipamentos.stream().map(Equipamento::getCategoria).distinct().sorted().forEach(categoriaFiltro::addItem);
+            categoriaFiltro.setSelectedItem(anterior == null ? "Todos" : anterior);
+            if(categoriaFiltro.getSelectedIndex()<0)categoriaFiltro.setSelectedIndex(0);
+            for (Equipamento e : equipamentos) {
+                Estilo.modelo(tabela).addRow(new String[] {e.getPatrimonio(), e.getNome(), e.getCategoria(), e.getMarca(), e.getModelo(), Regras.rotulo(e.getEstado()), Regras.rotulo(e.getStatus()), e.getSistemaOperacional(), e.getNumeroSerie(), e.getDepartamento(), ""});
             }
-        })) {
-            carregar();
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
         }
     }
 
-    /** Uma aba do modal: "Rotulo atual: [selo]" e, embaixo, a lista com o novo valor. */
-    private JPanel montarAba(String rotuloAtual, String valorAtual, String rotuloNovo, JComboBox<String> novo) {
-        JPanel atual = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        atual.setOpaque(false);
-        JLabel texto = new JLabel(rotuloAtual + ":");
-        texto.setForeground(Estilo.TEXTO_SUAVE);
-        atual.add(texto);
-        atual.add(Estilo.selo(valorAtual));
-
-        JPanel aba = new JPanel(new BorderLayout(0, 12));
-        aba.setOpaque(false);
-        aba.setBorder(BorderFactory.createEmptyBorder(14, 0, 4, 0));
-        aba.add(atual, BorderLayout.NORTH);
-        aba.add(Estilo.campo(rotuloNovo, novo), BorderLayout.CENTER);
-        return aba;
+    private Equipamento equipamentoSelecionado() {
+        int linha = tabela.getSelectedRow();
+        return linha < 0 || linha >= equipamentos.size() ? null : equipamentos.get(tabela.convertRowIndexToModel(linha));
     }
 
-    /** Editar dados: patrimonio, nome, categoria e estado do equipamento escolhido. */
-    private void editarDados() {
-        Equipamento e = exigirSelecao();
-        JTextField campoPatrimonio = new JTextField(e.getPatrimonio());
-        JTextField campoNome = new JTextField(e.getNome());
-        JTextField campoCategoria = new JTextField(e.getCategoria());
-        JComboBox<String> campoEstado = new JComboBox<>(Regras.rotulos(Regras.ESTADOS));
+    private void filtrar() {
+        String texto=busca.getText().trim().toLowerCase(java.util.Locale.ROOT);
+        Object cat=categoriaFiltro.getSelectedItem();
+        ordenador.setRowFilter(new javax.swing.RowFilter<javax.swing.table.DefaultTableModel,Integer>() {
+            public boolean include(Entry<? extends javax.swing.table.DefaultTableModel,? extends Integer> e) {
+                if(cat != null && !cat.equals("Todos") && !cat.equals(e.getStringValue(2)))return false;
+                for(int c=0;c<e.getValueCount();c++)if(e.getStringValue(c).toLowerCase(java.util.Locale.ROOT).contains(texto))return true;
+                return texto.isEmpty();
+            }
+        });
+    }
+    private void acoes(int linha) {
+        Equipamento equipamento=equipamentos.get(linha);
+        tabela.setRowSelectionInterval(tabela.convertRowIndexToView(linha),tabela.convertRowIndexToView(linha));
+        javax.swing.JPopupMenu menu=new javax.swing.JPopupMenu();
+        javax.swing.JMenuItem editar=new javax.swing.JMenuItem("Modificar cadastro");editar.addActionListener(e->preencherFormulario());menu.add(editar);
+        for(String status:new String[]{Equipamento.STATUS_DISPONIVEL,Equipamento.STATUS_INDISPONIVEL}){
+            javax.swing.JMenuItem item=new javax.swing.JMenuItem("Marcar como "+Regras.rotulo(status));
+            item.addActionListener(ev->{try{Aplicacao.equipamentos().alterarStatus(equipamento.getId(),status);atualizarTabela();}catch(RuntimeException erro){Mensagens.erro(this,erro);}});menu.add(item);
+        }
+        java.awt.Rectangle celula=tabela.getCellRect(tabela.convertRowIndexToView(linha),10,true);menu.show(tabela,celula.x,celula.y+celula.height);
+    }
+    private void preencherFormulario() {
+        Equipamento e = equipamentoSelecionado();
+        if (e == null) {
+            return;
+        }
+        campoPatrimonio.setText(e.getPatrimonio());
+        campoNome.setText(e.getNome());
+        campoCategoria.setText(e.getCategoria());
         campoEstado.setSelectedItem(Regras.rotulo(e.getEstado()));
+        campoModelo.setText(e.getModelo());
+        campoMarca.setText(e.getMarca());
+        campoNumeroSerie.setText(e.getNumeroSerie());
+        campoSistemaOperacional.setText(e.getSistemaOperacional());
+        campoDepartamento.setText(e.getDepartamento());
 
-        Modal modal = new Modal(this, "Editar equipamento")
-            .campo("Patrimônio", campoPatrimonio).campo("Nome", campoNome)
-            .campo("Categoria", campoCategoria).campo("Estado de conservação", campoEstado);
-        if (modal.exibir(() -> atualizar(e.getId(), campoPatrimonio.getText(),
-                campoNome.getText(), campoCategoria.getText(),
-                Regras.codigo((String) campoEstado.getSelectedItem())))) {
-            carregar();
+    }
+
+    private void cadastrar() {
+        try {
+            Aplicacao.equipamentos().cadastrar(campoPatrimonio.getText(), campoNome.getText(),
+                campoCategoria.getText(), (String) campoEstado.getSelectedItem(), campoModelo.getText(), campoMarca.getText(), campoNumeroSerie.getText(), campoSistemaOperacional.getText(), campoDepartamento.getText());
+            atualizarTabela();
+            limpar();
+            Mensagens.info(this, "Equipamento cadastrado (status Disponível).");
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
         }
     }
 
-    /** Ver historico: todos os emprestimos deste equipamento (somente leitura). */
-    private void verHistorico() {
-        Equipamento e = exigirSelecao();
-        JTable historico = Estilo.criarTabela(
-            new String[]{"Pessoa", "Retirada", "Devolução prevista", "Devolvido em", "Situação"});
-        for (EmprestimoDetalhe d : TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado)) {
-            Emprestimo m = d.emprestimo();
-            if (m.getEquipamentoId() == e.getId()) {
-                Estilo.modelo(historico).addRow(new Object[]{d.usuarioNome(), Estilo.dataHora(m.getDataRetirada()),
-                    Estilo.dia(m.getDataPrevista()), Estilo.dia(m.getDataDevolucao()), Regras.situacao(m)});
-            }
+    private void modificar() {
+        Equipamento e = equipamentoSelecionado();
+        if (e == null) {
+            Mensagens.aviso(this, "Selecione um equipamento na tabela.");
+            return;
         }
-        Estilo.colorirSituacao(historico, 4);
-
-        Modal modal = new Modal(this, "Histórico do equipamento")
-            .info("Patrimônio", e.getPatrimonio()).info("Nome", e.getNome());
-        if (historico.getRowCount() == 0) {
-            modal.info("Empréstimos", "este equipamento ainda não foi emprestado");
-        } else {
-            JScrollPane rolagem = Estilo.rolagem(historico);
-            rolagem.setPreferredSize(new Dimension(640, 200));
-            modal.componente(rolagem);
+        try {
+            Aplicacao.equipamentos().atualizar(e.getId(), campoPatrimonio.getText(), campoNome.getText(),
+                campoCategoria.getText(), (String) campoEstado.getSelectedItem(), campoModelo.getText(), campoMarca.getText(), campoNumeroSerie.getText(), campoSistemaOperacional.getText(), campoDepartamento.getText());
+            atualizarTabela();
+            Mensagens.info(this, "Equipamento atualizado. (O status não muda por aqui.)");
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
         }
-        modal.exibirSomenteLeitura();
     }
 
     private void excluir() {
-        Equipamento e = exigirSelecao();
-        if (Mensagens.confirmar(this, "Excluir " + e.getNome() + "?")) {
-            TarefaBanco.executar(this, () -> Aplicacao.equipamentos().excluir(e.getId()));
-            limpar();
-            carregar();
+        Equipamento e = equipamentoSelecionado();
+        if (e == null) {
+            Mensagens.aviso(this, "Selecione um equipamento na tabela.");
+            return;
         }
-    }
-
-    // ------------------------------------------------------------ apoio
-
-    private void cadastrar(String patrimonio, String nome, String categoria, String estado) {
-        TarefaBanco.executar(this, () -> Aplicacao.equipamentos().cadastrar(patrimonio, nome, categoria, estado));
-    }
-
-    private void atualizar(int id, String patrimonio, String nome, String categoria, String estado) {
-        TarefaBanco.executar(this, () -> Aplicacao.equipamentos().atualizar(id, patrimonio, nome, categoria, estado));
-    }
-
-    private Equipamento exigirSelecao() {
-        Equipamento atual = selecionado();
-        if (atual == null) throw new RegraNegocioException("Selecione um equipamento.");
-        return atual;
-    }
-
-    /** Equipamento da linha selecionada (linhaSelecionada ja considera ordenacao e filtro). */
-    private Equipamento selecionado() {
-        int i = Estilo.linhaSelecionada(tabela);
-        return i >= 0 && i < linhas.size() ? linhas.get(i) : null;
-    }
-
-    private void preencher() {
-        Equipamento e = selecionado();
-        if (e == null) return;
-        patrimonio.setText(e.getPatrimonio());
-        nome.setText(e.getNome());
-        categoria.setText(e.getCategoria());
-        estado.setSelectedItem(Regras.rotulo(e.getEstado()));
+        if (!Mensagens.confirmar(this, "Excluir \"" + e.getNome() + "\"?")) {
+            return;
+        }
+        try {
+            Aplicacao.equipamentos().excluir(e.getId());
+            atualizarTabela();
+            limpar();
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
+        }
     }
 
     private void limpar() {
+        campoPatrimonio.setText("");
+        campoNome.setText("");
+        campoCategoria.setText("");
+        campoEstado.setSelectedIndex(0);
+        campoModelo.setText("");
+        campoMarca.setText("");
+        campoNumeroSerie.setText("");
+        campoSistemaOperacional.setText("");
+        campoDepartamento.setText("");
+
         tabela.clearSelection();
-        patrimonio.setText("");
-        nome.setText("");
-        categoria.setText("");
-        estado.setSelectedIndex(0);
-    }
-
-    private void carregar() {
-        Equipamento anterior = selecionado(); // para manter a mesma linha escolhida depois de recarregar
-        List<Equipamento> atualizadas = TarefaBanco.consultar(this, Aplicacao.equipamentos()::listar);
-        linhas.clear();
-        linhas.addAll(atualizadas);
-        Estilo.modelo(tabela).setRowCount(0);
-        for (Equipamento e : linhas) {
-            Estilo.modelo(tabela).addRow(new Object[]{e.getId(), e.getPatrimonio(), e.getNome(),
-                e.getCategoria(), Regras.rotulo(e.getEstado()), Regras.rotulo(e.getStatus()), ""});
-        }
-        filtro.atualizar();
-        if (anterior != null) {
-            for (int i = 0; i < linhas.size(); i++) {
-                int visual = tabela.convertRowIndexToView(i);
-                if (linhas.get(i).getId() == anterior.getId() && visual >= 0) {
-                    tabela.setRowSelectionInterval(visual, visual);
-                }
-            }
-        }
-    }
-
-    private void executar(Runnable acao) {
-        try { acao.run(); carregar(); Mensagens.info(this, "Operação concluída."); }
-        catch (RuntimeException erro) { Mensagens.erro(this, erro); }
     }
 }

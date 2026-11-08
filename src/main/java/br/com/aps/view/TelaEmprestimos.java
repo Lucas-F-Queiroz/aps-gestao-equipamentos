@@ -20,7 +20,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 
 /**
- * Emprestimos: registra uma retirada seguindo as regras de negocio:
+ * Emprestimos: registra um emprestimo novo, seguindo as regras do Lucas:
  *   1. a pessoa precisa estar ativa;
  *   2. o equipamento precisa estar DISPONIVEL;
  *   3. um equipamento nao pode ter dois emprestimos abertos;
@@ -35,7 +35,6 @@ public class TelaEmprestimos extends JPanel {
     private final JTextField campoPrevista = new JTextField();
     private final JTable tabela = Estilo.criarTabela(new String[] {
         "ID", "Pessoa", "Equipamento", "Retirada", "Devolução prevista", "Devolvido em", "Situação"});
-    private final FiltroTabela filtro = new FiltroTabela(tabela);
     private final ArrayList<Equipamento> equipamentosDaLista = new ArrayList<>();
     private final ArrayList<Usuario> pessoasDaLista = new ArrayList<>();
 
@@ -67,18 +66,10 @@ public class TelaEmprestimos extends JPanel {
         cartaoForm.add(miolo, BorderLayout.CENTER);
         add(cartaoForm, BorderLayout.NORTH);
 
-        // Lista de todos os emprestimos, com busca, filtros e periodo da retirada
-        filtro.adicionarFiltro("Situação", 6);
-        filtro.adicionarFiltro("Pessoa", 1);
-        filtro.adicionarPeriodo("Data do empréstimo", 3);
         JPanel cartaoTabela = Estilo.cartao();
-        JPanel cabecalhoLista = new JPanel(new BorderLayout(0, 10));
-        cabecalhoLista.setOpaque(false);
-        cabecalhoLista.add(Estilo.subtitulo("Empréstimos registrados"), BorderLayout.NORTH);
-        cabecalhoLista.add(filtro, BorderLayout.CENTER);
-        cartaoTabela.add(cabecalhoLista, BorderLayout.NORTH);
+        cartaoTabela.add(Estilo.subtitulo("Empréstimos registrados"), BorderLayout.NORTH);
         Estilo.colorirSituacao(tabela, 6);
-        Estilo.larguras(tabela, 50, 160, 320, 150, 150, 150, 110);
+        Estilo.larguras(tabela, 50, 150, 320, 130, 140, 130, 100);
         cartaoTabela.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
         add(cartaoTabela, BorderLayout.CENTER);
 
@@ -95,12 +86,9 @@ public class TelaEmprestimos extends JPanel {
             int pessoaEscolhida = comboPessoa.getSelectedIndex() < 0 ? -1
                 : pessoasDaLista.get(comboPessoa.getSelectedIndex()).getId();
 
-            var equipamentos = TarefaBanco.consultar(this, Aplicacao.equipamentos()::listarDisponiveis);
-            var pessoas = TarefaBanco.consultar(this, Aplicacao.usuarios()::listar);
-            var emprestimos = TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado);
             comboEquipamento.removeAllItems();
             equipamentosDaLista.clear();
-            for (Equipamento e : equipamentos) { // regra 2
+            for (Equipamento e : Aplicacao.equipamentos().listarDisponiveis()) { // regra 2
                 equipamentosDaLista.add(e);
                 comboEquipamento.addItem(e.getNome() + " (" + e.getPatrimonio() + ")");
                 if (e.getId() == equipamentoEscolhido) {
@@ -109,7 +97,7 @@ public class TelaEmprestimos extends JPanel {
             }
             comboPessoa.removeAllItems();
             pessoasDaLista.clear();
-            for (Usuario u : pessoas) {
+            for (Usuario u : Aplicacao.usuarios().listar()) {
                 if (u.isAtivo()) { // regra 1
                     pessoasDaLista.add(u);
                     comboPessoa.addItem(u.getNome());
@@ -119,13 +107,12 @@ public class TelaEmprestimos extends JPanel {
                 }
             }
             Estilo.modelo(tabela).setRowCount(0);
-            for (EmprestimoDetalhe d : emprestimos) { // do mais novo ao mais antigo
-                Estilo.modelo(tabela).addRow(new Object[] {d.emprestimo().getId(), d.usuarioNome(),
+            for (EmprestimoDetalhe d : Aplicacao.emprestimos().listarDetalhado()) { // do mais novo ao mais antigo
+                Estilo.modelo(tabela).addRow(new String[] {String.valueOf(d.emprestimo().getId()), d.usuarioNome(),
                     d.equipamentoNome() + " (" + d.equipamentoPatrimonio() + ")",
                     Estilo.dataHora(d.emprestimo().getDataRetirada()), Estilo.dia(d.emprestimo().getDataPrevista()),
                     Estilo.dataHora(d.emprestimo().getDataDevolucao()), Regras.situacao(d.emprestimo())});
             }
-            filtro.atualizar();
         } catch (RuntimeException erro) {
             Mensagens.erro(this, erro);
         }
@@ -140,9 +127,8 @@ public class TelaEmprestimos extends JPanel {
         }
         try {
             LocalDate prevista = Regras.lerData(campoPrevista.getText(), "a devolução prevista");
-            int pessoaId = pessoasDaLista.get(posicaoPessoa).getId();
-            int equipamentoId = equipamentosDaLista.get(posicaoEquipamento).getId();
-            TarefaBanco.executar(this, () -> Aplicacao.emprestimos().emprestar(pessoaId, equipamentoId, prevista));
+            Aplicacao.emprestimos().emprestar(pessoasDaLista.get(posicaoPessoa).getId(),
+                equipamentosDaLista.get(posicaoEquipamento).getId(), prevista);
             campoPrevista.setText(LocalDate.now().plusDays(7).format(DATA));
             atualizar();
             Mensagens.info(this, "Empréstimo registrado. O equipamento agora está Emprestado.");

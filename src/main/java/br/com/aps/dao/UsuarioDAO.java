@@ -11,13 +11,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Persistencia JDBC de pessoas. Nenhuma classe Swing deve chamar SQL diretamente. */
 public class UsuarioDAO {
 
     public void inserir(Usuario usuario) throws SQLException {
         String sql = """
-                INSERT INTO usuario (nome, email, tipo, ativo, cpf, celular)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO usuario (nome, email, area_profissao, ativo, matricula, cpf, celular)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = ConnectionFactory.getConnection();
@@ -28,8 +27,9 @@ public class UsuarioDAO {
             statement.setString(2, usuario.getEmail());
             statement.setString(3, usuario.getTipo());
             statement.setBoolean(4, usuario.isAtivo());
-            statement.setString(5, usuario.getCpf());
-            statement.setString(6, usuario.getCelular());
+            statement.setString(5, usuario.getMatricula());
+            statement.setString(6, usuario.getCpf());
+            statement.setString(7, usuario.getCelular());
 
             statement.executeUpdate();
 
@@ -43,7 +43,7 @@ public class UsuarioDAO {
 
     public List<Usuario> listar() throws SQLException {
         String sql = """
-                SELECT id, nome, email, tipo, ativo, cpf, celular
+                SELECT id, nome, email, area_profissao, ativo, matricula, cpf, celular
                 FROM usuario
                 ORDER BY nome ASC, id ASC
                 """;
@@ -65,7 +65,7 @@ public class UsuarioDAO {
     // Retorna null se nao existir usuario com o ID informado.
     public Usuario buscarPorId(int id) throws SQLException {
         String sql = """
-                SELECT id, nome, email, tipo, ativo, cpf, celular
+                SELECT id, nome, email, area_profissao, ativo, matricula, cpf, celular
                 FROM usuario
                 WHERE id = ?
                 """;
@@ -88,7 +88,7 @@ public class UsuarioDAO {
     // Busca parcial: "ana" encontra "Ana Maria", conforme a collation do banco.
     public List<Usuario> buscarPorNome(String nome) throws SQLException {
         String sql = """
-                SELECT id, nome, email, tipo, ativo, cpf, celular
+                SELECT id, nome, email, area_profissao, ativo, matricula, cpf, celular
                 FROM usuario
                 WHERE nome LIKE ?
                 ORDER BY nome ASC, id ASC
@@ -115,7 +115,7 @@ public class UsuarioDAO {
     public boolean atualizar(Usuario usuario) throws SQLException {
         String sql = """
                 UPDATE usuario
-                SET nome = ?, email = ?, tipo = ?, ativo = ?, cpf = ?, celular = ?
+                SET nome = ?, email = ?, area_profissao = ?, ativo = ?, matricula = ?, cpf = ?, celular = ?
                 WHERE id = ?
                 """;
 
@@ -126,9 +126,10 @@ public class UsuarioDAO {
             statement.setString(2, usuario.getEmail());
             statement.setString(3, usuario.getTipo());
             statement.setBoolean(4, usuario.isAtivo());
-            statement.setString(5, usuario.getCpf());
-            statement.setString(6, usuario.getCelular());
-            statement.setInt(7, usuario.getId());
+            statement.setString(5, usuario.getMatricula());
+            statement.setString(6, usuario.getCpf());
+            statement.setString(7, usuario.getCelular());
+            statement.setInt(8, usuario.getId());
 
             return statement.executeUpdate() > 0;
         }
@@ -153,9 +154,10 @@ public class UsuarioDAO {
                 resultSet.getInt("id"),
                 resultSet.getString("nome"),
                 resultSet.getString("email"),
-                resultSet.getString("tipo"),
+                resultSet.getString("area_profissao"),
                 resultSet.getBoolean("ativo")
         );
+        usuario.setMatricula(resultSet.getString("matricula"));
         usuario.setCpf(resultSet.getString("cpf"));
         usuario.setCelular(resultSet.getString("celular"));
         return usuario;

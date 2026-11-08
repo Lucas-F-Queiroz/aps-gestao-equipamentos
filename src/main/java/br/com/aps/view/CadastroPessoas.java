@@ -1,249 +1,205 @@
 package br.com.aps.view;
 
 import br.com.aps.Aplicacao;
-import br.com.aps.controller.RegraNegocioException;
 import br.com.aps.controller.Regras;
-import br.com.aps.model.Emprestimo;
 import br.com.aps.model.EmprestimoDetalhe;
 import br.com.aps.model.Usuario;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 
 /**
- * Cadastro de pessoas. Em cima, o formulario; embaixo, a lista com busca, filtros e o menu "⋮"
- * de cada linha (Visualizar, Editar, Alterar situacao, Excluir). "Funcao" e o tipo da pessoa
- * (Aluno, Professor ou Funcionario). A validacao e o acesso ao banco ficam no Controller e no DAO.
+ * Cadastro de pessoas (tabela "usuario" do Lucas): nome, e-mail, área/profissão, matrícula e se está ativa.
+ * As regras e os limites (nome ate 100, e-mail unico ate 120, área/profissão livre até 100 caracteres e matrícula opcional única,
+ * historico impede exclusao) estao em UsuarioController e Regras.
  */
 public class CadastroPessoas extends JPanel {
-    private static final String[] SITUACOES = {"Ativo", "Inativo"};
-
-    private final JTextField nome = new JTextField();
-    private final JTextField email = new JTextField();
-    private final JTextField cpf = new JTextField();
-    private final JTextField celular = new JTextField();
-    private final JComboBox<String> funcao = new JComboBox<>(Regras.rotulos(Regras.TIPOS_USUARIO));
-    private final JCheckBox ativo = new JCheckBox("Pessoa ativa", true);
+    private final JTextField campoNome = new JTextField();
+    private final JTextField campoEmail = new JTextField();
+    private final JTextField campoTipo = new JTextField();
+    private final JTextField campoMatricula = new JTextField();
+    private final JTextField campoCpf = new JTextField();
+    private final JTextField campoCelular = new JTextField();
+    private final JComboBox<String> campoStatus = new JComboBox<>(new String[] {"Ativo", "Inativo"});
     private final JTable tabela = Estilo.criarTabela(
-        new String[]{"ID", "Nome", "E-mail", "CPF", "Celular", "Função", "Situação", "Ações"});
-    private final List<Usuario> linhas = new ArrayList<>();
-    private final FiltroTabela filtro = new FiltroTabela(tabela);
+        new String[] {"ID", "Nome", "E-mail", "Área/profissão", "Status", "Equipamento em uso", "Matrícula"});
+    private final ArrayList<Usuario> usuarios = new ArrayList<>(); // mesma ordem das linhas da tabela
 
     public CadastroPessoas() {
-        super(new BorderLayout(0, 14));
+        super(new BorderLayout(0, 12));
         setOpaque(false);
 
-        nome.putClientProperty("JTextField.placeholderText", "Nome completo");
-        email.putClientProperty("JTextField.placeholderText", "nome@empresa.com");
-        cpf.putClientProperty("JTextField.placeholderText", "000.000.000-00 (opcional)");
-        celular.putClientProperty("JTextField.placeholderText", "(11) 91234-5678 (opcional)");
+        campoNome.putClientProperty("JTextField.placeholderText", "Nome completo (até " + Regras.NOME_USUARIO_MAX + " letras)");
+        campoEmail.putClientProperty("JTextField.placeholderText", "nome@empresa.com");
 
-        // ---------- formulario
-        JPanel cadastro = Estilo.cartao();
-        cadastro.add(Estilo.subtitulo("Cadastro de pessoas"), BorderLayout.NORTH);
-        JPanel campos = new JPanel(new GridLayout(2, 3, 12, 10));
+        JPanel cartaoForm = Estilo.cartao();
+        cartaoForm.setBorder(javax.swing.BorderFactory.createEmptyBorder(12, 20, 12, 20));
+        ((BorderLayout) cartaoForm.getLayout()).setVgap(8);
+        cartaoForm.add(Estilo.subtitulo("Dados da pessoa"), BorderLayout.NORTH);
+
+        JPanel campos = new JPanel(new GridLayout(0, 4, 16, 8));
         campos.setOpaque(false);
-        campos.add(Estilo.campo("Nome", nome));
-        campos.add(Estilo.campo("E-mail", email));
-        campos.add(Estilo.campo("CPF (opcional)", cpf));
-        campos.add(Estilo.campo("Celular com DDD (opcional)", celular));
-        campos.add(Estilo.campo("Função", funcao));
-        campos.add(Estilo.campo("Situação (edição)", ativo));
-        cadastro.add(campos, BorderLayout.CENTER);
+        campos.add(Estilo.campo("Nome", campoNome));
+        campos.add(Estilo.campo("E-mail (único)", campoEmail));
+        campos.add(Estilo.campo("Área/profissão", campoTipo));
+        campos.add(Estilo.campo("Status", campoStatus));
+        campos.add(Estilo.campo("Matrícula (opcional, única)", campoMatricula));
+        campos.add(Estilo.campo("CPF (opcional, único)", campoCpf));
+        campos.add(Estilo.campo("Celular (opcional)", campoCelular));
 
-        JButton criar = Estilo.botaoPrincipal("Cadastrar");
-        JButton salvar = Estilo.botao("Salvar alterações");
-        JButton excluirForm = Estilo.botao("Excluir");
+        JButton cadastrar = Estilo.botaoPrincipal("Cadastrar");
+        JButton modificar = Estilo.botao("Modificar");
+        JButton excluir = Estilo.botao("Excluir");
         JButton limpar = Estilo.botao("Limpar");
-        cadastro.add(Estilo.linhaBotoes(criar, salvar, excluirForm, limpar), BorderLayout.SOUTH);
-        ativo.setEnabled(false); // pessoa nova nasce ativa; o campo so vale ao editar uma pessoa da lista
-        add(cadastro, BorderLayout.NORTH);
 
-        // ---------- lista: busca, filtros, botao "Alterar situacao" e menu "⋮"
-        JButton alterarSituacao = Estilo.botaoPrincipal("Alterar situação");
-        filtro.adicionarFiltro("Função", 5).adicionarFiltro("Situação", 6).adicionarBotao(alterarSituacao);
-        Estilo.larguras(tabela, 50, 180, 230, 130, 130, 130, 120, 70);
-        Estilo.colorirSituacao(tabela, 6);
-        JPopupMenu menu = MenuAcoes.instalar(tabela, 7);
-        menu.add(MenuAcoes.item("Visualizar", "olho", Estilo.BARRA_LATERAL, this::visualizar));
-        menu.add(MenuAcoes.item("Editar", "editar", Estilo.BARRA_LATERAL, this::editar));
-        menu.add(MenuAcoes.item("Alterar situação", "pessoa", Estilo.BARRA_LATERAL, this::alterarSituacao));
-        menu.add(MenuAcoes.item("Excluir", "excluir", Estilo.VERMELHO, this::excluir));
-        JPanel listagem = Estilo.cartao();
-        listagem.add(filtro, BorderLayout.NORTH);
-        listagem.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
-        add(listagem, BorderLayout.CENTER);
+        JLabel dica = new JLabel("Pessoa nova nasce Ativa. Quem tem histórico de empréstimos não pode ser excluída: use o status Inativo.");
+        dica.setForeground(Estilo.TEXTO_SUAVE);
+        dica.setFont(dica.getFont().deriveFont(12f));
+        for (JButton acao : new JButton[] {cadastrar, modificar, excluir, limpar}) {
+            acao.putClientProperty("FlatLaf.style", (String) acao.getClientProperty("FlatLaf.style") + "; margin: 5,16,5,16");
+        }
 
-        // ---------- botoes
-        criar.addActionListener(e -> executar(() -> {
-            cadastrar(nome.getText(), email.getText(),
-                Regras.codigo((String) funcao.getSelectedItem()), cpf.getText(), celular.getText());
-            limpar();
-        }));
-        salvar.addActionListener(e -> executar(() -> {
-            Usuario u = exigirSelecao();
-            atualizar(u.getId(), nome.getText(), email.getText(),
-                Regras.codigo((String) funcao.getSelectedItem()), ativo.isSelected(), cpf.getText(), celular.getText());
-        }));
-        excluirForm.addActionListener(e -> Mensagens.executar(this, this::excluir));
+        JPanel miolo = new JPanel(new BorderLayout(0, 8));
+        miolo.setOpaque(false);
+        miolo.add(campos, BorderLayout.NORTH);
+        miolo.add(Estilo.linhaBotoes(cadastrar, modificar, excluir, limpar), BorderLayout.CENTER);
+        miolo.add(dica, BorderLayout.SOUTH);
+        cartaoForm.add(miolo, BorderLayout.CENTER);
+        add(cartaoForm, BorderLayout.NORTH);
+
+        JPanel cartaoTabela = Estilo.cartao();
+        cartaoTabela.add(Estilo.subtitulo("Cadastro"), BorderLayout.NORTH);
+        Estilo.colorirSituacao(tabela, 4);
+        Estilo.larguras(tabela, 50, 180, 240, 130, 100, 330);
+        cartaoTabela.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
+        add(cartaoTabela, BorderLayout.CENTER);
+
+        cadastrar.addActionListener(e -> cadastrar());
+        modificar.addActionListener(e -> modificar());
+        excluir.addActionListener(e -> excluir());
         limpar.addActionListener(e -> limpar());
-        alterarSituacao.addActionListener(e -> Mensagens.executar(this, this::alterarSituacao));
         tabela.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) preencher();
+            if (!e.getValueIsAdjusting()) {
+                preencherFormulario();
+            }
         });
-        carregar();
+        campoStatus.setEnabled(false); // pessoa nova sempre nasce Ativa
+
+        atualizarTabela();
     }
 
-    // ------------------------------------------------------------ janelas (modais) do menu "⋮"
-
-    /** Visualizar: somente leitura, com o resumo dos emprestimos da pessoa. */
-    private void visualizar() {
-        Usuario u = exigirSelecao();
-        List<EmprestimoDetalhe> dela = TarefaBanco.consultar(this, Aplicacao.emprestimos()::listarDetalhado).stream()
-            .filter(d -> d.emprestimo().getUsuarioId() == u.getId()).collect(Collectors.toList());
-        String emUso = dela.stream()
-            .filter(d -> Emprestimo.STATUS_ABERTO.equals(d.emprestimo().getStatus()))
-            .map(d -> d.equipamentoNome() + " (" + d.equipamentoPatrimonio() + ")")
-            .collect(Collectors.joining(", "));
-        new Modal(this, "Visualizar pessoa")
-            .info("Nome", u.getNome())
-            .info("E-mail", u.getEmail())
-            .info("CPF", u.getCpf() == null ? "Não informado" : u.getCpf())
-            .info("Celular", u.getCelular() == null ? "Não informado" : u.getCelular())
-            .info("Função", Regras.rotulo(u.getTipo()))
-            .selo("Situação", u.isAtivo() ? "Ativo" : "Inativo")
-            .info("Empréstimos registrados", String.valueOf(dela.size()))
-            .info("Equipamento em uso", emUso.isEmpty() ? "nenhum" : emUso)
-            .exibirSomenteLeitura();
-    }
-
-    /** Editar: muda nome, e-mail, funcao e situacao da pessoa escolhida. */
-    private void editar() {
-        Usuario u = exigirSelecao();
-        JTextField campoNome = new JTextField(u.getNome());
-        JTextField campoEmail = new JTextField(u.getEmail());
-        JTextField campoCpf = new JTextField(u.getCpf());
-        JTextField campoCelular = new JTextField(u.getCelular());
-        JComboBox<String> campoFuncao = new JComboBox<>(Regras.rotulos(Regras.TIPOS_USUARIO));
-        campoFuncao.setSelectedItem(Regras.rotulo(u.getTipo()));
-        JComboBox<String> campoSituacao = new JComboBox<>(SITUACOES);
-        campoSituacao.setSelectedItem(u.isAtivo() ? "Ativo" : "Inativo");
-
-        Modal modal = new Modal(this, "Editar pessoa")
-            .campo("Nome", campoNome).campo("E-mail", campoEmail)
-            .campo("CPF (opcional)", campoCpf).campo("Celular com DDD (opcional)", campoCelular)
-            .campo("Função", campoFuncao).campo("Situação", campoSituacao);
-        if (modal.exibir(() -> atualizar(u.getId(), campoNome.getText(),
-                campoEmail.getText(), Regras.codigo((String) campoFuncao.getSelectedItem()),
-                "Ativo".equals(campoSituacao.getSelectedItem()), campoCpf.getText(), campoCelular.getText()))) {
-            carregar();
+    private void atualizarTabela() {
+        try {
+            Map<Integer, String> emUso = new HashMap<>(); // pessoa -> equipamento do emprestimo aberto
+            for (EmprestimoDetalhe aberto : Aplicacao.emprestimos().abertos()) {
+                emUso.put(aberto.emprestimo().getUsuarioId(),
+                    aberto.equipamentoNome() + " (" + aberto.equipamentoPatrimonio() + ")");
+            }
+            usuarios.clear();
+            usuarios.addAll(Aplicacao.usuarios().listar());
+            Estilo.modelo(tabela).setRowCount(0);
+            for (Usuario u : usuarios) {
+                Estilo.modelo(tabela).addRow(new String[] {String.valueOf(u.getId()), u.getNome(), u.getEmail(),
+                    u.getAreaProfissao(), u.isAtivo() ? "Ativo" : "Inativo", emUso.getOrDefault(u.getId(), "-"), u.getMatricula()});
+            }
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
         }
     }
 
-    /** Alterar situacao: so ativa ou inativa a pessoa (os outros dados ficam como estao). */
-    private void alterarSituacao() {
-        Usuario u = exigirSelecao();
-        JComboBox<String> novaSituacao = new JComboBox<>(SITUACOES);
-        novaSituacao.setSelectedItem(u.isAtivo() ? "Inativo" : "Ativo"); // sugere o contrario do atual
+    private Usuario pessoaSelecionada() {
+        int linha = tabela.getSelectedRow();
+        return linha < 0 || linha >= usuarios.size() ? null : usuarios.get(linha);
+    }
 
-        Modal modal = new Modal(this, "Alterar situação da pessoa")
-            .info("Nome", u.getNome())
-            .selo("Situação atual", u.isAtivo() ? "Ativo" : "Inativo")
-            .campo("Nova situação", novaSituacao);
-        if (modal.exibir(() -> atualizar(u.getId(), u.getNome(), u.getEmail(),
-                u.getTipo(), "Ativo".equals(novaSituacao.getSelectedItem()), u.getCpf(), u.getCelular()))) {
-            carregar();
+    private void preencherFormulario() {
+        Usuario u = pessoaSelecionada();
+        if (u == null) {
+            return;
+        }
+        campoNome.setText(u.getNome());
+        campoEmail.setText(u.getEmail());
+        campoTipo.setText(u.getAreaProfissao());
+        campoMatricula.setText(u.getMatricula());
+        campoCpf.setText(u.getCpf());
+        campoCelular.setText(u.getCelular());
+        campoStatus.setSelectedItem(u.isAtivo() ? "Ativo" : "Inativo");
+        campoStatus.setEnabled(true);
+    }
+
+    private void cadastrar() {
+        try {
+            Aplicacao.usuarios().cadastrar(campoNome.getText(), campoEmail.getText(),
+                campoTipo.getText(), campoMatricula.getText(), campoCpf.getText(), campoCelular.getText());
+            atualizarTabela();
+            limpar();
+            Mensagens.info(this, "Pessoa cadastrada.");
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
+        }
+    }
+
+    private void modificar() {
+        Usuario u = pessoaSelecionada();
+        if (u == null) {
+            Mensagens.aviso(this, "Selecione uma pessoa na tabela.");
+            return;
+        }
+        try {
+            boolean ativo = campoStatus.getSelectedItem().equals("Ativo");
+            Aplicacao.usuarios().atualizar(u.getId(), campoNome.getText(), campoEmail.getText(),
+                campoTipo.getText(), ativo, campoMatricula.getText(), campoCpf.getText(), campoCelular.getText());
+            atualizarTabela();
+
+            String mensagem = "Pessoa atualizada.";
+            if (!ativo && Aplicacao.usuarios().possuiEmprestimoAberto(u.getId())) {
+                // A regra do Lucas so exige pessoa ativa para EMPRESTAR; devolver continua permitido.
+                mensagem += "\nAtenção: ela ainda está com um equipamento emprestado."
+                    + " Ela poderá devolvê-lo, mas não poderá fazer novos empréstimos.";
+            }
+            Mensagens.info(this, mensagem);
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
         }
     }
 
     private void excluir() {
-        Usuario u = exigirSelecao();
-        if (Mensagens.confirmar(this, "Excluir " + u.getNome() + "?")) {
-            TarefaBanco.executar(this, () -> Aplicacao.usuarios().excluir(u.getId()));
-            limpar();
-            carregar();
+        Usuario u = pessoaSelecionada();
+        if (u == null) {
+            Mensagens.aviso(this, "Selecione uma pessoa na tabela.");
+            return;
         }
-    }
-
-    // ------------------------------------------------------------ apoio
-
-    private void cadastrar(String nome, String email, String tipo, String cpf, String celular) {
-        TarefaBanco.executar(this, () -> Aplicacao.usuarios().cadastrar(nome, email, tipo, cpf, celular));
-    }
-
-    private void atualizar(int id, String nome, String email, String tipo, boolean ativo, String cpf, String celular) {
-        TarefaBanco.executar(this, () -> Aplicacao.usuarios().atualizar(id, nome, email, tipo, ativo, cpf, celular));
-    }
-
-    private Usuario exigirSelecao() {
-        Usuario u = selecionado();
-        if (u == null) throw new RegraNegocioException("Selecione uma pessoa.");
-        return u;
-    }
-
-    /** Pessoa da linha selecionada (linhaSelecionada ja considera ordenacao e filtro). */
-    private Usuario selecionado() {
-        int i = Estilo.linhaSelecionada(tabela);
-        return i >= 0 && i < linhas.size() ? linhas.get(i) : null;
-    }
-
-    private void preencher() {
-        Usuario u = selecionado();
-        if (u == null) return;
-        nome.setText(u.getNome());
-        email.setText(u.getEmail());
-        cpf.setText(u.getCpf());
-        celular.setText(u.getCelular());
-        funcao.setSelectedItem(Regras.rotulo(u.getTipo()));
-        ativo.setSelected(u.isAtivo());
-        ativo.setEnabled(true);
+        if (!Mensagens.confirmar(this, "Excluir \"" + u.getNome() + "\"?")) {
+            return;
+        }
+        try {
+            Aplicacao.usuarios().excluir(u.getId());
+            atualizarTabela();
+            limpar();
+        } catch (RuntimeException erro) {
+            Mensagens.erro(this, erro);
+        }
     }
 
     private void limpar() {
+        campoNome.setText("");
+        campoEmail.setText("");
+        campoTipo.setText("");
+        campoMatricula.setText("");
+        campoCpf.setText("");
+        campoCelular.setText("");
+        campoStatus.setSelectedIndex(0);
+        campoStatus.setEnabled(false);
         tabela.clearSelection();
-        nome.setText("");
-        email.setText("");
-        cpf.setText("");
-        celular.setText("");
-        funcao.setSelectedIndex(0);
-        ativo.setSelected(true);
-        ativo.setEnabled(false);
-    }
-
-    private void carregar() {
-        Usuario anterior = selecionado(); // para manter a mesma linha escolhida depois de recarregar
-        List<Usuario> atualizadas = TarefaBanco.consultar(this, Aplicacao.usuarios()::listar);
-        linhas.clear();
-        linhas.addAll(atualizadas);
-        Estilo.modelo(tabela).setRowCount(0);
-        for (Usuario u : linhas) {
-            Estilo.modelo(tabela).addRow(new Object[]{u.getId(), u.getNome(), u.getEmail(),
-                u.getCpf(), u.getCelular(), Regras.rotulo(u.getTipo()), u.isAtivo() ? "Ativo" : "Inativo", ""});
-        }
-        filtro.atualizar();
-        if (anterior != null) {
-            for (int i = 0; i < linhas.size(); i++) {
-                int visual = tabela.convertRowIndexToView(i);
-                if (linhas.get(i).getId() == anterior.getId() && visual >= 0) {
-                    tabela.setRowSelectionInterval(visual, visual);
-                }
-            }
-        }
-    }
-
-    private void executar(Runnable acao) {
-        try { acao.run(); carregar(); Mensagens.info(this, "Operação concluída."); }
-        catch (RuntimeException erro) { Mensagens.erro(this, erro); }
     }
 }

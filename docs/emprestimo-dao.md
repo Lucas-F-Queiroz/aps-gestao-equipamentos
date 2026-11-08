@@ -1,3 +1,5 @@
+> Referência da versão anterior. Para a configuração e o esquema atuais (V1–V4), consulte [README](../README.md). Pessoas usam área/profissão e matrícula; equipamentos incluem modelo, marca e série.
+
 # Contrato do EmprestimoDAO
 
 Responsável: Lucas (DAO / JDBC / transações). Consumidor: Davi (Controller).
@@ -9,6 +11,7 @@ Responsável: Lucas (DAO / JDBC / transações). Consumidor: Davi (Controller).
 | `inserir(Emprestimo)` | `void` | Cria empréstimo ABERTO e muda equipamento para EMPRESTADO em uma transação. Define ID no objeto ao confirmar. |
 | `registrarDevolucao(int, LocalDateTime)` | `boolean` | Finaliza empréstimo e libera equipamento na mesma transação. Retorna `false` se ID não existir ou já estiver devolvido. |
 | `registrarDevolucao(int)` | `boolean` | Igual ao anterior, usando `LocalDateTime.now()`. |
+| `registrarDevolucao(int, LocalDateTime, String estado, String observacao)` | `boolean` | Igual à primeira, e **na mesma transação** também grava o estado em que o equipamento voltou (`NOVO`, `BOM`, `REGULAR` ou `DANIFICADO`): atualiza `equipamento.estado` e insere a linha em `devolucao` (migration V3). Continua valendo a regra 5: o equipamento volta para `DISPONIVEL`. Estado inválido lança `IllegalArgumentException`; com `estado = null` o comportamento é o da versão sem estado. |
 | `buscarPorId(int)` | `Emprestimo` | Retorna `null` se não encontrar. |
 | `listar()` | `List<Emprestimo>` | Todo o histórico, mais recentes primeiro. |
 | `listarAbertos()` | `List<Emprestimo>` | Apenas ABERTO, vencimento mais próximo primeiro. |
@@ -63,3 +66,10 @@ O GitHub Actions executa esse teste em um MySQL 8.4 temporário. Para executar n
 A View não faz SQL. O Controller verifica os campos antes de chamar o DAO e trata erros. A classe `EmprestimoDAO` protege a integridade do banco, mas não substitui o Controller.
 
 O cadastro/edição de equipamento NÃO deve alterar livremente o status `EMPRESTADO`: somente empréstimo e devolução devem realizar essas transições.
+
+## Estado na devolução (V3)
+
+A tabela `devolucao` (migration `V3__estado_na_devolucao.sql`) guarda, por empréstimo devolvido pela interface, o
+`estado` do equipamento e uma `observacao` opcional (até 255 caracteres). A leitura para o relatório é feita por
+`DevolucaoDAO.listarDetalhado()`, que devolve `DevolucaoDetalhe` (DTO de leitura, não é uma entidade nova).
+Empréstimos devolvidos antes da V3, ou por `registrarDevolucao(id, data)`, não têm linha nessa tabela.

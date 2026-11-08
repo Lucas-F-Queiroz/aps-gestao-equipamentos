@@ -9,21 +9,20 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.Locale;
 
 /**
- * Valores de dominio e validacoes utilizados pelos Controllers.
+ * As regras e limites definidos pelo Lucas (README e banco de dados), num lugar so.
  * Os Controllers usam esta classe para validar o que vem da tela.
  *
  * Valores permitidos (o banco recusa qualquer outro):
- *   Usuario.tipo ALUNO, PROFESSOR ou FUNCIONARIO
+ *   Usuario.areaProfissao texto livre (até 100); matrícula opcional única (até 50)
  *   Equipamento.estado   NOVO, BOM, REGULAR, DANIFICADO
  *   Equipamento.status   DISPONIVEL, EMPRESTADO, INDISPONIVEL
  *   Emprestimo.status    ABERTO, DEVOLVIDO   (ATRASADO nao e gravado: e calculado pela data)
  *
  * Tamanhos maximos (colunas VARCHAR do banco):
  *   usuario.nome 100 | usuario.email 120 (unico) | equipamento.patrimonio 50 (unico)
- *   equipamento.nome 100 | equipamento.categoria 50
+ *   equipamento.nome 100 | equipamento.categoria 50 | devolucao.observacao 255
  */
 public final class Regras {
     public static final String[] TIPOS_USUARIO = {
@@ -59,7 +58,7 @@ public final class Regras {
             case "FUNCIONARIO":
                 return "Funcionário";
             default:
-                return codigo.substring(0, 1) + codigo.substring(1).toLowerCase(Locale.ROOT); // "BOM" -> "Bom"
+                return codigo.substring(0, 1) + codigo.substring(1).toLowerCase(); // "BOM" -> "Bom"
         }
     }
 
@@ -74,7 +73,7 @@ public final class Regras {
     /** Texto da tela -> valor do banco. Ex.: "Funcionário" vira "FUNCIONARIO". */
     public static String codigo(String rotulo) {
         String semAcento = Normalizer.normalize(rotulo, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        return semAcento.toUpperCase(Locale.ROOT);
+        return semAcento.toUpperCase();
     }
 
     /** Situacao mostrada na tela: Aberto, Atrasado (calculado pela data) ou Devolvido. */
@@ -107,10 +106,30 @@ public final class Regras {
 
     public static String exigirEmail(String valor) {
         String email = exigirTexto("e-mail", valor, EMAIL_MAX);
-        if (!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
+        if (email.contains(" ") || !email.matches("[^@]+@[^@]+\\.[^@]+")) {
             throw new RegraNegocioException("Informe um e-mail válido.");
         }
         return email;
+    }
+
+    /** Confere se o valor e um dos permitidos (ex.: o tipo de usuario). Devolve o valor do banco. */
+    public static String exigirUm(String campo, String valor, String[] permitidos) {
+        String codigo = valor == null ? "" : codigo(valor.trim());
+        for (String permitido : permitidos) {
+            if (permitido.equals(codigo)) {
+                return permitido;
+            }
+        }
+        throw new RegraNegocioException("Valor inválido para " + campo + ".");
+    }
+
+    /** Le "dd/MM/aaaa". Lanca RegraNegocioException se o texto nao for uma data valida. */
+    public static LocalDate lerData(String texto, String campo) {
+        try {
+            return LocalDate.parse(texto == null ? "" : texto.trim(), DATA);
+        } catch (DateTimeParseException erro) {
+            throw new RegraNegocioException("Informe " + campo + " no formato dd/mm/aaaa.");
+        }
     }
 
     /** CPF opcional, sem mascara e com digitos verificadores validos. */
@@ -144,23 +163,4 @@ public final class Regras {
         return celular;
     }
 
-    /** Confere se o valor e um dos permitidos; devolve o codigo do banco. */
-    public static String exigirUm(String campo, String valor, String[] permitidos) {
-        String codigo = valor == null ? "" : codigo(valor.trim());
-        for (String permitido : permitidos) {
-            if (permitido.equals(codigo)) {
-                return permitido;
-            }
-        }
-        throw new RegraNegocioException("Valor inválido para " + campo + ".");
-    }
-
-    /** Le "dd/MM/aaaa". Lanca RegraNegocioException se o texto nao for uma data valida. */
-    public static LocalDate lerData(String texto, String campo) {
-        try {
-            return LocalDate.parse(texto == null ? "" : texto.trim(), DATA);
-        } catch (DateTimeParseException erro) {
-            throw new RegraNegocioException("Informe " + campo + " no formato dd/mm/aaaa.");
-        }
-    }
 }

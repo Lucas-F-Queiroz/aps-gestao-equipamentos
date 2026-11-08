@@ -11,16 +11,15 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Persistencia dos equipamentos. Status operacional e alterado em operacao separada. */
 public class EquipamentoDAO {
 
     private static final String COLUNAS =
-            "id, patrimonio, nome, categoria, estado, status";
+            "id, patrimonio, nome, categoria, estado, status, modelo, marca, numero_serie, sistema_operacional, departamento";
 
     public void inserir(Equipamento equipamento) throws SQLException {
         String sql = """
-                INSERT INTO equipamento (patrimonio, nome, categoria, estado, status)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO equipamento (patrimonio, nome, categoria, estado, status, modelo, marca, numero_serie, sistema_operacional, departamento)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = ConnectionFactory.getConnection();
@@ -32,6 +31,12 @@ public class EquipamentoDAO {
             statement.setString(3, equipamento.getCategoria());
             statement.setString(4, equipamento.getEstado());
             statement.setString(5, equipamento.getStatus());
+            statement.setString(6, equipamento.getModelo());
+            statement.setString(7, equipamento.getMarca());
+            statement.setString(8, equipamento.getNumeroSerie());
+            statement.setString(9, equipamento.getSistemaOperacional());
+            statement.setString(10, equipamento.getDepartamento());
+
 
             statement.executeUpdate();
 
@@ -146,7 +151,7 @@ public class EquipamentoDAO {
     public boolean atualizar(Equipamento equipamento) throws SQLException {
         String sql = """
                 UPDATE equipamento
-                SET patrimonio = ?, nome = ?, categoria = ?, estado = ?
+                SET patrimonio = ?, nome = ?, categoria = ?, estado = ?, status = ?, modelo = ?, marca = ?, numero_serie = ?, sistema_operacional = ?, departamento = ?
                 WHERE id = ?
                 """;
 
@@ -157,36 +162,16 @@ public class EquipamentoDAO {
             statement.setString(2, equipamento.getNome());
             statement.setString(3, equipamento.getCategoria());
             statement.setString(4, equipamento.getEstado());
-            statement.setInt(5, equipamento.getId());
+            statement.setString(5, equipamento.getStatus());
+            statement.setString(6, equipamento.getModelo());
+            statement.setString(7, equipamento.getMarca());
+            statement.setString(8, equipamento.getNumeroSerie());
+            statement.setString(9, equipamento.getSistemaOperacional());
+            statement.setString(10, equipamento.getDepartamento());
+
+            statement.setInt(11, equipamento.getId());
 
             return statement.executeUpdate() > 0;
-        }
-    }
-
-    /**
-     * Altera somente disponibilidade. O UPDATE e atomico: a mesma linha nao
-     * pode ser emprestada ao mesmo tempo e impedimos alterar status durante
-     * qualquer emprestimo ABERTO. A edicao normal nunca escreve status.
-     */
-    public boolean alterarStatusDisponibilidade(int id, String novoStatus) throws SQLException {
-        if (!Equipamento.STATUS_DISPONIVEL.equals(novoStatus)
-                && !Equipamento.STATUS_INDISPONIVEL.equals(novoStatus)) {
-            throw new IllegalArgumentException("Status manual invalido.");
-        }
-        String sql = """
-                UPDATE equipamento SET status = ?
-                WHERE id = ? AND status IN ('DISPONIVEL', 'INDISPONIVEL')
-                  AND NOT EXISTS (
-                    SELECT 1 FROM emprestimo
-                    WHERE equipamento_id = ? AND status = 'ABERTO'
-                  )
-                """;
-        try (Connection connection = ConnectionFactory.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, novoStatus);
-            statement.setInt(2, id);
-            statement.setInt(3, id);
-            return statement.executeUpdate() == 1;
         }
     }
 
@@ -222,7 +207,7 @@ public class EquipamentoDAO {
     }
 
     private Equipamento mapearEquipamento(ResultSet resultado) throws SQLException {
-        return new Equipamento(
+        Equipamento equipamento = new Equipamento(
                 resultado.getInt("id"),
                 resultado.getString("patrimonio"),
                 resultado.getString("nome"),
@@ -230,5 +215,11 @@ public class EquipamentoDAO {
                 resultado.getString("estado"),
                 resultado.getString("status")
         );
+        equipamento.setModelo(resultado.getString("modelo"));
+        equipamento.setMarca(resultado.getString("marca"));
+        equipamento.setNumeroSerie(resultado.getString("numero_serie"));
+        equipamento.setSistemaOperacional(resultado.getString("sistema_operacional"));
+        equipamento.setDepartamento(resultado.getString("departamento"));
+        return equipamento;
     }
 }

@@ -26,11 +26,6 @@ public final class IconeAcao implements Icon {
             case "mais": g.drawLine(3,10,17,10);g.drawLine(10,3,10,17);break;
             case "editar": g.drawPolygon(new int[]{3,5,17,15},new int[]{17,11,2,4},4);g.drawLine(3,18,18,18);break;
             case "excluir": g.drawRect(5,6,10,12);g.drawLine(3,5,17,5);g.drawLine(7,2,13,2);g.drawLine(8,9,8,15);g.drawLine(12,9,12,15);break;
-            case "olho": g.drawOval(2,5,16,10);g.fillOval(8,8,4,4);break;
-            case "relogio": g.drawOval(2,2,16,16);g.drawLine(10,5,10,10);g.drawLine(10,10,13,12);break;
-            case "trocar": g.drawLine(3,7,16,7);g.drawLine(12,3,16,7);g.drawLine(12,11,16,7);g.drawLine(17,13,4,13);g.drawLine(8,9,4,13);g.drawLine(8,17,4,13);break;
-            case "pontos": g.fillOval(8,3,4,4);g.fillOval(8,8,4,4);g.fillOval(8,13,4,4);break;
-            case "seta": g.drawLine(7,3,14,10);g.drawLine(14,10,7,17);break;
             default: g.drawLine(14,2,7,12);g.drawPolygon(new int[]{7,13,10,2},new int[]{10,14,18,15},4);break;
         }
         g.dispose();

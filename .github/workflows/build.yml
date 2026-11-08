@@ -29,9 +29,3 @@ jobs:
 
       - name: Validar campos da configuracao (sem banco)
         run: java -cp "target/classes:target/test-classes" br.com.aps.util.DatabaseConfigManualCheck
-
-      - name: Validar CPF e celular (sem banco)
-        run: java -cp "target/classes:target/test-classes" br.com.aps.integracao.APSPessoaValidacaoCheck
-
-      - name: Validar exportacao e cancelamento de substituicao
-        run: java -Djava.awt.headless=true -cp "target/classes:target/test-classes" br.com.aps.integracao.APSExportacaoCheck

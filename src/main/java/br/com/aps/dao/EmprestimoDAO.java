@@ -74,8 +74,29 @@ public class EmprestimoDAO {
      */
     public boolean registrarDevolucao(int emprestimoId, LocalDateTime devolucao)
             throws SQLException {
+        return registrarDevolucao(emprestimoId, devolucao, null, null);
+    }
+
+    /**
+     * Igual a registrarDevolucao(id, data), e tambem registra COMO o equipamento voltou
+     * (NOVO, BOM, REGULAR ou DANIFICADO) na MESMA transacao:
+     *  - o estado informado passa a ser o estado do equipamento;
+     *  - estado e observacao ficam gravados na tabela devolucao (V4), para o relatorio.
+     * Com estado null, o comportamento e o da versao antiga (nada do estado e gravado).
+     * Continua valendo a regra 5: o equipamento volta para DISPONIVEL.
+     */
+    public boolean registrarDevolucao(int emprestimoId, LocalDateTime devolucao,
+                                      String estado, String observacao) throws SQLException {
+        return registrarDevolucao(emprestimoId, devolucao, estado, observacao, null);
+    }
+
+    public boolean registrarDevolucao(int emprestimoId, LocalDateTime devolucao,
+            String estado, String observacao, String responsavel) throws SQLException {
         if (devolucao == null) {
             throw new IllegalArgumentException("Data de devolucao e obrigatoria.");
+        }
+        if (estado != null && !estadoValido(estado)) {
+            throw new IllegalArgumentException("Estado do equipamento invalido.");
         }
 
         try (Connection conexao = ConnectionFactory.getConnection()) {
@@ -126,19 +147,25 @@ public class EmprestimoDAO {
                     }
                 }
 
-                String sqlEquipamento = """
-                        UPDATE equipamento
-                        SET status = ?
-                        WHERE id = ? AND status = ?
-                        """;
+                String sqlEquipamento = estado == null
+                        ? "UPDATE equipamento SET status = ? WHERE id = ? AND status = ?"
+                        : "UPDATE equipamento SET status = ?, estado = ? WHERE id = ? AND status = ?";
                 try (PreparedStatement atualizacao = conexao.prepareStatement(sqlEquipamento)) {
-                    atualizacao.setString(1, Equipamento.STATUS_DISPONIVEL);
-                    atualizacao.setInt(2, equipamentoId);
-                    atualizacao.setString(3, Equipamento.STATUS_EMPRESTADO);
+                    int posicao = 1;
+                    atualizacao.setString(posicao++, Equipamento.STATUS_DISPONIVEL);
+                    if (estado != null) {
+                        atualizacao.setString(posicao++, estado);
+                    }
+                    atualizacao.setInt(posicao++, equipamentoId);
+                    atualizacao.setString(posicao, Equipamento.STATUS_EMPRESTADO);
 
                     if (atualizacao.executeUpdate() != 1) {
                         throw new SQLException("Status do equipamento inconsistente.", "45000");
                     }
+                }
+
+                if (estado != null) {
+                    gravarEstadoDaDevolucao(conexao, emprestimoId, estado, observacao, responsavel);
                 }
 
                 conexao.commit();
@@ -240,6 +267,29 @@ public class EmprestimoDAO {
             }
         }
         return historico;
+    }
+
+    private boolean estadoValido(String estado) {
+        return Equipamento.ESTADO_NOVO.equals(estado)
+                || Equipamento.ESTADO_BOM.equals(estado)
+                || Equipamento.ESTADO_REGULAR.equals(estado)
+                || Equipamento.ESTADO_DANIFICADO.equals(estado);
+    }
+
+    private void gravarEstadoDaDevolucao(Connection conexao, int emprestimoId,
+                                         String estado, String observacao, String responsavel) throws SQLException {
+        String sql = "INSERT INTO devolucao (emprestimo_id, estado, observacao, registrado_por) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement insercao = conexao.prepareStatement(sql)) {
+            insercao.setInt(1, emprestimoId);
+            insercao.setString(2, estado);
+            if (observacao == null || observacao.isBlank()) {
+                insercao.setNull(3, java.sql.Types.VARCHAR);
+            } else {
+                insercao.setString(3, observacao.trim());
+            }
+            insercao.setString(4, responsavel);
+            insercao.executeUpdate();
+        }
     }
 
     private boolean usuarioAtivo(Connection conexao, int usuarioId) throws SQLException {

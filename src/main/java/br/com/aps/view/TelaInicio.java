@@ -1,20 +1,15 @@
 package br.com.aps.view;
 
 import br.com.aps.Aplicacao;
-import br.com.aps.controller.Regras;
-import br.com.aps.model.Emprestimo;
-import br.com.aps.model.EmprestimoDetalhe;
+import br.com.aps.controller.EmprestimoController.Evento;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.GridLayout;
-import java.net.URL;
-import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -27,32 +22,35 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 
 /**
- * Pagina inicial. Em cima, a caixa de boas-vindas. Embaixo, a esquerda, os tres atalhos
- * (Cadastros, Emprestimos e Consultas) e, a direita, o "Historico ao vivo": os emprestimos mais
- * recentes, relidos do banco a cada 5 segundos (Timer + SwingWorker, para a tela nao travar).
+ * Pagina inicial:
+ *   em cima   -> caixa azul esticada com a mensagem de boas-vindas e a mao acenando
+ *   esquerda  -> os 6 botoes (GridLayout 2 linhas x 3 colunas)
+ *   direita   -> historico de emprestimos e devolucoes, lido do banco e atualizado sozinho
  */
 public class TelaInicio extends JPanel {
-    private static final int INTERVALO_MS = 5000;
-    private static final int LINHAS_NO_HISTORICO = 12;
-
-    private final JTable tabela = Estilo.criarTabela(
-        new String[]{"Pessoa", "Equipamento", "Retirada", "Devolução prevista", "Situação"});
-    private final Timer relogio = new Timer(INTERVALO_MS, evento -> atualizar());
+    private final JTable tabela = Estilo.criarTabela(new String[] {"Data e hora", "Ação", "Pessoa", "Equipamento"});
+    private final JLabel aoVivo = new JLabel();
+    private final Timer relogio;
+    private List<Evento> ultimosEventos;
     private boolean buscando = false;
+    private int batida = 0;
 
     public TelaInicio(JanelaPrincipal janela) {
-        super(new BorderLayout(0, 16));
+        super(new BorderLayout(0, 14));
         setOpaque(false);
 
-        add(criarBoasVindas(), BorderLayout.NORTH);
+        add(criarCaixaDeBoasVindas(), BorderLayout.NORTH);
 
-        JPanel meio = new JPanel(new BorderLayout(16, 0));
+        JPanel meio = new JPanel(new BorderLayout(14, 0));
         meio.setOpaque(false);
-        meio.add(criarAtalhos(janela), BorderLayout.WEST);   // largura fixa
-        meio.add(criarHistorico(janela), BorderLayout.CENTER); // ocupa o que sobrar
+        meio.add(criarBotoes(janela), BorderLayout.CENTER);  // esquerda (ocupa o que sobrar)
+        meio.add(criarHistorico(), BorderLayout.EAST);       // direita (largura fixa, mais estreita)
         add(meio, BorderLayout.CENTER);
 
         atualizar();
+
+        // "Tempo real": o Timer bate a cada 1 segundo; a cada 2 batidas consulta o banco de novo
+        relogio = new Timer(1000, e -> atualizar());
         relogio.start();
     }
 
@@ -63,106 +61,98 @@ public class TelaInicio extends JPanel {
         super.removeNotify();
     }
 
-    // ------------------------------------------------------------ boas-vindas
+    // ------------------------------------------------------------ caixa de boas-vindas
 
-    private JPanel criarBoasVindas() {
-        JPanel caixa = new JPanel(new BorderLayout(22, 0));
+    private JPanel criarCaixaDeBoasVindas() {
+        JPanel caixa = new JPanel(new BorderLayout(18, 0));
         caixa.setBackground(Estilo.AZUL);
-        caixa.setBorder(BorderFactory.createEmptyBorder(18, 26, 18, 26));
-        caixa.putClientProperty("FlatLaf.style", "arc: 24");
+        caixa.setBorder(BorderFactory.createEmptyBorder(11, 18, 11, 18));
+        caixa.putClientProperty("FlatLaf.style", "arc: 24"); // cantos arredondados
 
-        // A imagem fica em src/main/resources/imagens/mao.png (se faltar, so nao aparece)
-        URL arquivo = TelaInicio.class.getResource("/imagens/mao.png");
-        if (arquivo != null) {
-            caixa.add(new JLabel(new ImageIcon(arquivo)), BorderLayout.WEST);
-        }
+        // A imagem fica em src/main/resources/imagens/mao.png
+        JLabel mao = new JLabel(new ImageIcon(TelaInicio.class.getResource("/imagens/mao.png")));
 
-        String data = LocalDate.now().format(
-            DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", new Locale("pt", "BR")));
-        data = data.substring(0, 1).toUpperCase() + data.substring(1);
         JLabel mensagem = new JLabel("<html>"
-            + "<span style='font-size:28px'><b>Olá, seja bem-vindo!</b></span><br>"
-            + "<span style='font-size:14px'><b>Sistema de Empréstimo de Equipamentos de T.I.</b></span><br>"
-            + "<span style='font-size:12px;color:#BFDBFE'>" + data + "</span></html>");
+            + "<span style='font-size:25px'><b>Olá, seja bem-vindo!</b></span><br>"
+            + "<span style='font-size:13px'>Sistema de Empréstimo de Equipamentos de T.I.</span>"
+            + "</html>");
         mensagem.setForeground(Color.WHITE);
-        caixa.add(mensagem, BorderLayout.CENTER);
+
+        caixa.add(mao, BorderLayout.WEST);
+        caixa.add(mensagem, BorderLayout.CENTER); // CENTER: a caixa fica esticada ate o fim
         return caixa;
     }
 
-    // ------------------------------------------------------------ atalhos (esquerda)
+    // ------------------------------------------------------------ 6 botoes (esquerda)
 
-    private JPanel criarAtalhos(JanelaPrincipal janela) {
-        JPanel coluna = new JPanel(new GridLayout(3, 1, 0, 14)); // 3 linhas, 1 coluna
-        coluna.setOpaque(false);
-        coluna.setPreferredSize(new Dimension(520, 0));
-        coluna.add(criarAtalho(janela, 1, "Cadastros", "Pessoas e equipamentos", Icone.USUARIOS,
-            Estilo.VERDE, "#F0FDF4", "#BBF7D0"));
-        coluna.add(criarAtalho(janela, 2, "Empréstimos", "Registrar empréstimo e devolução", Icone.PRANCHETA,
-            Estilo.AZUL, "#EFF6FF", "#BFDBFE"));
-        coluna.add(criarAtalho(janela, 3, "Consultas", "Inventário, situação e relatórios", Icone.LUPA,
-            new Color(124, 58, 237), "#FAF5FF", "#E9D5FF"));
-        return coluna;
+    private JPanel criarBotoes(JanelaPrincipal janela) {
+        JPanel grade = new JPanel(new GridLayout(2, 3, 12, 12)); // 2 linhas x 3 colunas
+        grade.setOpaque(false);
+
+        grade.add(criarBotao(janela, 1, "Equipamentos", "Situação e disponibilidade", Icone.COMPUTADOR, Estilo.AZUL));
+        grade.add(criarBotao(janela, 2, "Cadastros", "Pessoas e equipamentos", Icone.MAIS, Estilo.VERDE));
+        grade.add(criarBotao(janela, 3, "Consultar", "Emprestados e pessoas", Icone.LUPA, new Color(124, 58, 237)));
+        grade.add(criarBotao(janela, 4, "Devolução", "Registrar e avaliar o estado", Icone.DEVOLVER, Estilo.LARANJA));
+        grade.add(criarBotao(janela, 5, "Relatórios", "Estado na devolução", Icone.RELATORIO, new Color(13, 148, 136)));
+        grade.add(criarBotao(janela, 6, "Empréstimos", "Emprestar equipamentos", Icone.PRANCHETA, new Color(219, 39, 119)));
+        return grade;
     }
 
-    /**
-     * Cartao-botao: icone e texto a esquerda, seta a direita. O botao tem BorderLayout proprio
-     * (os rotulos dentro dele deixam o clique passar para o botao).
-     */
-    private JButton criarAtalho(JanelaPrincipal janela, int area, String titulo, String descricao,
-                                int icone, Color cor, String fundo, String borda) {
-        JButton botao = new JButton();
-        botao.setLayout(new BorderLayout(12, 0));
-
-        JLabel texto = new JLabel("<html><b style='font-size:17px'>" + titulo + "</b><br>"
-            + "<span style='color:#64748B'>" + descricao + "</span></html>",
-            new Icone(icone, cor, Color.WHITE, 64, true), SwingConstants.LEFT);
-        texto.setIconTextGap(18);
-        botao.add(texto, BorderLayout.CENTER);
-        botao.add(new JLabel(new IconeAcao("seta", cor)), BorderLayout.EAST);
-
+    /** Um botao grande: icone em cima e texto embaixo. Ao clicar, abre a tela escolhida. */
+    private JButton criarBotao(JanelaPrincipal janela, int tela, String titulo, String descricao,
+                               int tipoIcone, Color cor) {
+        String corHex = String.format("#%06X", cor.getRGB() & 0xFFFFFF);
+        JButton botao = new JButton("<html><div style='text-align:center'>"
+            + "<b style='font-size:14px'>" + titulo + "</b><br>"
+            + "<span style='font-size:11px;color:#64748B'>" + descricao + "</span></div></html>");
+        botao.setIcon(new Icone(tipoIcone, cor, Color.WHITE, 60, true));
+        botao.setHorizontalTextPosition(SwingConstants.CENTER); // texto centralizado...
+        botao.setVerticalTextPosition(SwingConstants.BOTTOM);   // ...embaixo do icone
+        botao.setIconTextGap(7);
         botao.putClientProperty("FlatLaf.style",
-            "arc: 20; margin: 12,18,12,18; background: " + fundo + "; foreground: #0F172A;"
-            + " borderWidth: 1; borderColor: " + borda + "; hoverBorderColor: "
-            + String.format("#%06X", cor.getRGB() & 0xFFFFFF) + "; focusWidth: 0");
-        botao.addActionListener(evento -> janela.mostrar(area));
+            "arc: 28; background: #FFFFFF; foreground: #0F172A; borderWidth: 1;"
+            + " borderColor: #E2E8F0; hoverBorderColor: " + corHex + ";"
+            + " focusedBorderColor: #CBD5E1; focusWidth: 0;"
+            + " hoverBackground: #F8FAFC; focusedBackground: #FFFFFF; pressedBackground: #F1F5F9");
+        botao.addActionListener(e -> janela.mostrar(tela));
         return botao;
     }
 
-    // ------------------------------------------------------------ historico ao vivo (direita)
+    // ------------------------------------------------------------ historico (direita)
 
-    private JPanel criarHistorico(JanelaPrincipal janela) {
+    private JPanel criarHistorico() {
         JPanel cartao = Estilo.cartao();
-
-        JLabel titulo = new JLabel("Histórico ao vivo", new IconeAcao("relogio", Estilo.AZUL), SwingConstants.LEFT);
-        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 18f));
-        titulo.setIconTextGap(10);
-        JButton verTodos = Estilo.botao("Ver todos");
-        verTodos.setIcon(new IconeAcao("seta", Estilo.BARRA_LATERAL));
-        verTodos.setHorizontalTextPosition(SwingConstants.LEFT); // seta depois do texto
-        verTodos.addActionListener(evento -> janela.mostrar(3, 1)); // Consultas > Situacao dos emprestimos
+        cartao.setPreferredSize(new Dimension(460, 0)); // largura fixa; a altura acompanha a janela
 
         JPanel cabecalho = new JPanel(new BorderLayout());
         cabecalho.setOpaque(false);
-        cabecalho.add(titulo, BorderLayout.WEST);
-        cabecalho.add(verTodos, BorderLayout.EAST);
+        cabecalho.add(Estilo.subtitulo("Empréstimos e devoluções"), BorderLayout.WEST);
+        cabecalho.add(aoVivo, BorderLayout.EAST);
         cartao.add(cabecalho, BorderLayout.NORTH);
 
-        Estilo.larguras(tabela, 140, 250, 140, 140, 110);
-        Estilo.colorirSituacao(tabela, 4);
+        Estilo.colorirSituacao(tabela, 1);
+        Estilo.larguras(tabela, 125, 100, 100, 135);
         cartao.add(Estilo.rolagem(tabela), BorderLayout.CENTER);
         return cartao;
     }
 
-    /** Le os emprestimos mais recentes em outra thread (o SwingWorker) e redesenha a tabela. */
+    /** Chamado a cada segundo: atualiza o relogio e, de 2 em 2 segundos, consulta o banco. */
     private void atualizar() {
-        if (buscando) {
-            return; // a consulta anterior ainda nao terminou
+        String hora = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        aoVivo.setText("<html><span style='color:#16A34A'>●</span> "
+            + "<span style='color:#64748B'>Ao vivo  " + hora + "</span></html>");
+
+        batida++;
+        if (batida % 2 == 0 || buscando) { // consulta na 1a batida, 3a, 5a... e nunca duas ao mesmo tempo
+            return;
         }
         buscando = true;
-        new SwingWorker<List<EmprestimoDetalhe>, Void>() {
+
+        // O SwingWorker consulta o banco em outra thread: se o MySQL demorar, a tela nao trava.
+        new SwingWorker<List<Evento>, Void>() {
             @Override
-            protected List<EmprestimoDetalhe> doInBackground() {
-                return Aplicacao.emprestimos().listarDetalhado(); // ja vem do mais novo para o mais antigo
+            protected List<Evento> doInBackground() {
+                return Aplicacao.emprestimos().historico();
             }
 
             @Override
@@ -171,19 +161,29 @@ public class TelaInicio extends JPanel {
                 try {
                     mostrar(get());
                 } catch (Exception erro) {
-                    // sem conexao agora: mantem o que ja esta na tela e tenta de novo no proximo ciclo
+                    aoVivo.setText("<html><span style='color:#DC2626'>●</span> "
+                        + "<span style='color:#64748B'>Sem conexão com o banco</span></html>");
                 }
             }
         }.execute();
     }
 
-    private void mostrar(List<EmprestimoDetalhe> emprestimos) {
+    /** "27/10/2026 14:30:05" vira "27/10 14:30:05" (cabe melhor na tabela estreita). */
+    private String dataCurta(java.time.LocalDateTime quando) {
+        String completa = Estilo.dataHoraSegundos(quando);
+        return completa.substring(0, 5) + " " + completa.substring(11);
+    }
+
+    /** So refaz a tabela se houve novidade. */
+    private void mostrar(List<Evento> eventos) {
+        if (eventos.equals(ultimosEventos)) {
+            return;
+        }
+        ultimosEventos = eventos;
         Estilo.modelo(tabela).setRowCount(0);
-        for (EmprestimoDetalhe d : emprestimos.subList(0, Math.min(LINHAS_NO_HISTORICO, emprestimos.size()))) {
-            Emprestimo e = d.emprestimo();
-            Estilo.modelo(tabela).addRow(new Object[]{d.usuarioNome(),
-                d.equipamentoNome() + " (" + d.equipamentoPatrimonio() + ")",
-                Estilo.dataHora(e.getDataRetirada()), Estilo.dia(e.getDataPrevista()), Regras.situacao(e)});
+        for (Evento evento : eventos) {
+            Estilo.modelo(tabela).addRow(new String[] {
+                dataCurta(evento.quando()), evento.acao(), evento.pessoa(), evento.equipamento()});
         }
     }
 }

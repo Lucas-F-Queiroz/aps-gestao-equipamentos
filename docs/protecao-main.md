@@ -1,3 +1,5 @@
+> Referência da versão anterior. Para a configuração e o esquema atuais (V1–V4), consulte [README](../README.md). Pessoas usam área/profissão e matrícula; equipamentos incluem modelo, marca e série.
+
 # Protecao da main
 
 Lucas (`@Lucas-F-Queiroz`, ID GitHub `200534446`) decide quais alteracoes entram na `main`.

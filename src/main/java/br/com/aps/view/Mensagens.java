@@ -25,22 +25,13 @@ final class Mensagens {
             pai, mensagem, "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
     }
 
-    /** Executa a acao; se der erro, mostra o aviso (usado pelos itens de menu e botoes). */
-    static void executar(Component pai, Runnable acao) {
-        try {
-            acao.run();
-        } catch (RuntimeException erro) {
-            erro(pai, erro);
-        }
-    }
-
-    /** Falha prevista vira aviso; detalhes inesperados ficam no log, nao na tela. */
+    /** Erro esperado (regra do sistema) vira aviso com a mensagem pronta; o resto mostra o erro tecnico. */
     static void erro(Component pai, RuntimeException erro) {
         if (erro instanceof RegraNegocioException) {
             aviso(pai, erro.getMessage());
         } else {
             erro.printStackTrace();
-            aviso(pai, "Ocorreu um erro inesperado. Verifique os registros da aplicação.");
+            aviso(pai, "Erro inesperado: " + erro);
         }
     }
 }

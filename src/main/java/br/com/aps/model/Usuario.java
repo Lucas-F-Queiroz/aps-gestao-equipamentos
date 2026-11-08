@@ -9,9 +9,10 @@ public class Usuario {
     private int id;
     private String nome;
     private String email;
+    private String tipo; // Alias legado para area_profissao, texto livre
+    private String matricula;
     private String cpf;
     private String celular;
-    private String tipo;
     private boolean ativo;
 
     public Usuario() {
@@ -53,29 +54,24 @@ public class Usuario {
         this.email = email;
     }
 
+    /** Compatibilidade com chamadas antigas: retorna a área/profissão, sem lista fixa. */
     public String getTipo() {
         return tipo;
-    }
-
-    public String getCpf() {
-        return cpf;
-    }
-
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
-
-    public String getCelular() {
-        return celular;
-    }
-
-    public void setCelular(String celular) {
-        this.celular = celular;
     }
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
     }
+
+    public String getAreaProfissao() { return tipo; }
+    public void setAreaProfissao(String valor) { tipo = valor; }
+    public String getMatricula() { return matricula; }
+    public void setMatricula(String valor) { matricula = valor; }
+
+    public String getCpf() { return cpf; }
+    public void setCpf(String valor) { cpf = valor; }
+    public String getCelular() { return celular; }
+    public void setCelular(String valor) { celular = valor; }
 
     public boolean isAtivo() {
         return ativo;
